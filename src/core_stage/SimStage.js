@@ -7,9 +7,9 @@ const viewportContainer = new Container();
 // 指示器容器
 const indicatorContainer = new Container();
 // 机器容器
-const machineContainer = new Container();
+const machineRootContainer = new Container();
 // 传送带容器
-const conveyorContainer = new Container();
+const beltRootContainer = new Container();
 // 管道容器
 const pipeContainer = new Container();
 // 背景容器
@@ -18,9 +18,9 @@ const backgroundContainer = new Container();
 // 结构布局
 viewportContainer.addChild(
     backgroundContainer,
-    conveyorContainer,
+    beltRootContainer,
     pipeContainer,
-    machineContainer,
+    machineRootContainer,
     indicatorContainer,
 )
 
@@ -32,8 +32,8 @@ export {
     rootStage,
     viewportContainer,
     indicatorContainer,
-    machineContainer,
+    machineRootContainer,
     pipeContainer,
-    conveyorContainer,
+    beltRootContainer,
     backgroundContainer,
 }

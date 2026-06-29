@@ -1,10 +1,10 @@
 import { Graphics } from "pixi.js";
 import { backgroundContainer } from "./SimStage.js";
-import { useStageStore } from "../stores/StageConfig.js";
+import { useStorageStore } from "../stores/StorageStore.js";
 
 function drawGridLines() {
   const grid = new Graphics();
-  const stageStore = useStageStore();
+  const stageStore = useStorageStore();
 
   const row = stageStore.rowCount;
   const col = stageStore.colCount;

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@pixi/layout':
+        specifier: ^3.2.1
+        version: 3.2.1(@types/react@19.2.17)(pixi.js@8.19.0)(react@19.2.7)(yoga-layout@3.2.1)
       nanoid:
         specifier: ^5.1.15
         version: 5.1.15
@@ -70,6 +73,18 @@ packages:
 
   '@pixi/colord@2.9.6':
     resolution: {integrity: sha512-nezytU2pw587fQstUu1AsJZDVEynjskwOL+kibwcdxsMBFqPsFFNA7xl0ii/gXuDi6M0xj3mfRJj8pBSc2jCfA==}
+
+  '@pixi/layout@3.2.1':
+    resolution: {integrity: sha512-ANg9pk7qo4psnafupTY47ZYoL2Jp1f8djiEUGJQAPEr+m2QIPaCR+dWjzSl1kqZTHlYmxxVNnztCRfrPu+q62w==}
+    peerDependencies:
+      pixi.js: ^8
+      yoga-layout: ^3
+
+  '@pixi/react@8.0.5':
+    resolution: {integrity: sha512-Z1VRdnv9Gh+lTLzNKjpS7GaTNDjUxRVJNtIdtK2i0sCpigvjx5mvJ72EPLhBFgepB6j3ZCkL0YBb6BqgTGbhGA==}
+    peerDependencies:
+      pixi.js: ^8.2.6
+      react: '>=19.0.0'
 
   '@rolldown/binding-android-arm64@1.1.2':
     resolution: {integrity: sha512-2cZ+7xRS+DBcuJBJKnfzsbleumJhBqSlJVpuzHC0nTqfd3QQ7Vx2/x5YR/D7cBamKSeWplwo82Fn9lqYUDEMfA==}
@@ -174,6 +189,14 @@ packages:
 
   '@types/earcut@3.0.0':
     resolution: {integrity: sha512-k/9fOUGO39yd2sCjrbAJvGDEQvRwRnQIZlBz43roGwUZo5SHAmyVvSFyaVVZkicRVCaDXPKlbxrUcBuJoSWunQ==}
+
+  '@types/react-reconciler@0.28.9':
+    resolution: {integrity: sha512-HHM3nxyUZ3zAylX8ZEyrDNd2XZOnQ0D5XfunJF5FLQnZbHHYq4UWvW1QfelQNXv1ICNkwYhfxjwfnqivYB6bFg==}
+    peerDependencies:
+      '@types/react': '*'
+
+  '@types/react@19.2.17':
+    resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
 
   '@vitejs/plugin-vue@6.0.7':
     resolution: {integrity: sha512-km+p+XdSz9Sxm5rqUbqcSfZYaAniKxWBj1KURl+Jr7UaPvvX7BmaWMdP69I5rrFDeQGyxAG7NXdc57vz+snhWg==}
@@ -280,6 +303,11 @@ packages:
 
   ismobilejs@1.1.1:
     resolution: {integrity: sha512-VaFW53yt8QO61k2WJui0dHf4SlL8lxBofUuUmwBo0ljPk0Drz2TiuDW4jo3wDcv41qy/SxrJ+VAzJ/qYqsmzRw==}
+
+  its-fine@2.0.0:
+    resolution: {integrity: sha512-KLViCmWx94zOvpLwSlsx6yOCeMhZYaxrJV87Po5k/FoZzcPSahvK5qJ7fYhS61sZi5ikmh2S3Hz55A2l3U69ng==}
+    peerDependencies:
+      react: ^19.0.0
 
   js-binary-schema-parser@2.0.3:
     resolution: {integrity: sha512-xezGJmOb4lk/M1ZZLTR/jaBHQ4gG/lqQnJqdIv4721DMggsa1bDVlHXNeHYogaIEHD9vCRv0fcL4hMA+Coarkg==}
@@ -403,6 +431,16 @@ packages:
     resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
     engines: {node: ^10 || ^12 || >=14}
 
+  react-reconciler@0.31.0:
+    resolution: {integrity: sha512-7Ob7Z+URmesIsIVRjnLoDGwBEG/tVitidU0nMsqX/eeJaLY89RISO/10ERe0MqmzuKUUB1rmY+h1itMbUHg9BQ==}
+    engines: {node: '>=0.10.0'}
+    peerDependencies:
+      react: ^19.0.0
+
+  react@19.2.7:
+    resolution: {integrity: sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==}
+    engines: {node: '>=0.10.0'}
+
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
@@ -410,6 +448,9 @@ packages:
     resolution: {integrity: sha512-x0CrQQqCXWGeI8dTvFfN/Dnv3yMKT9hv5jFjlOreKAx9wqLq9wz7VvLLHyaAXC90/CpggTu9SisSbsJJTPSjNQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
+
+  scheduler@0.25.0:
+    resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -485,6 +526,9 @@ packages:
       typescript:
         optional: true
 
+  yoga-layout@3.2.1:
+    resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
+
 snapshots:
 
   '@babel/helper-string-parser@7.29.7': {}
@@ -528,6 +572,26 @@ snapshots:
   '@oxc-project/types@0.137.0': {}
 
   '@pixi/colord@2.9.6': {}
+
+  '@pixi/layout@3.2.1(@types/react@19.2.17)(pixi.js@8.19.0)(react@19.2.7)(yoga-layout@3.2.1)':
+    dependencies:
+      pixi.js: 8.19.0
+      yoga-layout: 3.2.1
+    optionalDependencies:
+      '@pixi/react': 8.0.5(@types/react@19.2.17)(pixi.js@8.19.0)(react@19.2.7)
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+
+  '@pixi/react@8.0.5(@types/react@19.2.17)(pixi.js@8.19.0)(react@19.2.7)':
+    dependencies:
+      its-fine: 2.0.0(@types/react@19.2.17)(react@19.2.7)
+      pixi.js: 8.19.0
+      react: 19.2.7
+      react-reconciler: 0.31.0(react@19.2.7)
+    transitivePeerDependencies:
+      - '@types/react'
+    optional: true
 
   '@rolldown/binding-android-arm64@1.1.2':
     optional: true
@@ -586,6 +650,16 @@ snapshots:
     optional: true
 
   '@types/earcut@3.0.0': {}
+
+  '@types/react-reconciler@0.28.9(@types/react@19.2.17)':
+    dependencies:
+      '@types/react': 19.2.17
+    optional: true
+
+  '@types/react@19.2.17':
+    dependencies:
+      csstype: 3.2.3
+    optional: true
 
   '@vitejs/plugin-vue@6.0.7(vite@8.1.0)(vue@3.5.38)':
     dependencies:
@@ -704,6 +778,14 @@ snapshots:
 
   ismobilejs@1.1.1: {}
 
+  its-fine@2.0.0(@types/react@19.2.17)(react@19.2.7):
+    dependencies:
+      '@types/react-reconciler': 0.28.9(@types/react@19.2.17)
+      react: 19.2.7
+    transitivePeerDependencies:
+      - '@types/react'
+    optional: true
+
   js-binary-schema-parser@2.0.3: {}
 
   lightningcss-android-arm64@1.32.0:
@@ -797,6 +879,15 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  react-reconciler@0.31.0(react@19.2.7):
+    dependencies:
+      react: 19.2.7
+      scheduler: 0.25.0
+    optional: true
+
+  react@19.2.7:
+    optional: true
+
   rfdc@1.4.1: {}
 
   rolldown@1.1.2:
@@ -819,6 +910,9 @@ snapshots:
       '@rolldown/binding-wasm32-wasi': 1.1.2
       '@rolldown/binding-win32-arm64-msvc': 1.1.2
       '@rolldown/binding-win32-x64-msvc': 1.1.2
+
+  scheduler@0.25.0:
+    optional: true
 
   source-map-js@1.2.1: {}
 
@@ -855,3 +949,5 @@ snapshots:
       '@vue/runtime-dom': 3.5.38
       '@vue/server-renderer': 3.5.38(vue@3.5.38)
       '@vue/shared': 3.5.38
+
+  yoga-layout@3.2.1: {}

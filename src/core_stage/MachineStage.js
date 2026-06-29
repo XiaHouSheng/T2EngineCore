@@ -1,24 +1,16 @@
-import { machineContainer } from "../core_stage/SimStage.js";
-import { NineSliceSprite, Texture } from "pixi.js";
-import { gridToPixel } from "../core_middleware/PositionConvert.js";
-
-const textTexture = new Texture();
+import { machineRootContainer } from "../core_stage/SimStage.js";
+import { MachineContainer } from "../core_container_sub/MachineContainer.js";
 
 // 绘制机器
 function drawMachine(machine) {
-  const {x, y} = gridToPixel(machine.gridX, machine.gridY);
-  const machineSprite = new NineSliceSprite({
-    texture: textTexture,
-    width: machine.width,
-    height: machine.height,
-  });
-  machineSprite.anchor.set(0);
-  machineSprite.position.set(x, y);
-  machineSprite.rotation = Math.PI * machine.rotation;
-  machineContainer.addChild(machineSprite);
+  const machineContainer = new MachineContainer(machine);
+  machineRootContainer.addChild(machineContainer);
+  return machineContainer;
 }
 
-// 旋转机器
-function rotateDrawMachine() {}
+// 视觉上移除机器
+function dropDrawMachine(machine_container) {
+  machineRootContainer.removeChild(machine_container);
+}
 
-export { drawMachine, rotateDrawMachine };
+export { drawMachine, dropDrawMachine };

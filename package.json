@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pixi/layout": "^3.2.1",
     "nanoid": "^5.1.15",
     "pinia": "^3.0.4",
     "pixi.js": "^8.19.0",

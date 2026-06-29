@@ -1,12 +1,38 @@
 //像素坐标与网格坐标的转换
-import { useStageStore } from "../stores/StageConfig.js";
+import { useStorageStore } from "../stores/StorageStore.js";
+
 
 function gridToPixel(x, y) {
-  const stageStore = useStageStore();
+  const stageStore = useStorageStore();
   return {
-    x: x * stageStore.cellWidth,
-    y: y * stageStore.cellHeight,
+    x: x * stageStore.cellWidth - stageStore.cellWidth / 2,
+    y: y * stageStore.cellHeight - stageStore.cellHeight / 2,
   };
 }
 
-export { gridToPixel };
+function pixelToGrid(x, y) {
+  const stageStore = useStorageStore();
+  return {
+    gridX: Math.floor((x + stageStore.cellWidth / 2) / stageStore.cellWidth),
+    gridY: Math.floor((y + stageStore.cellHeight / 2) / stageStore.cellHeight),
+  };
+}
+
+function sizeGridToPixel(width, height) {
+  const stageStore = useStorageStore();
+  return {
+    width: width * stageStore.cellWidth,
+    height: height * stageStore.cellHeight,
+  };
+}
+
+function getCellSize() {
+  const stageStore = useStorageStore();
+  return {
+    width: stageStore.cellWidth,
+    height: stageStore.cellHeight,
+  };
+}
+
+
+export { gridToPixel, pixelToGrid, sizeGridToPixel, getCellSize };

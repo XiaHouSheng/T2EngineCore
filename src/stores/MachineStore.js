@@ -1,25 +1,31 @@
-import { useStageStore } from "./StageConfig.js";
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { markRaw, ref } from "vue";
 
 export const useMachineStore = defineStore("machineStore", () => {
-    const stageStore = useStageStore();
-    
-    const machineTypes = ref({
-        "testType": {
-            width: 3,
-            height: 3,
-        }
-    });
+  const machineTypes = markRaw({
+    testType4: {
+      gridWidth: 5,
+      gridHeight: 4,
+      anchor: [
+        {
+          x: 0.5,
+          y: 0.375,
+        },
+        {
+          x: 0.375,
+          y: 0.5,
+        },
+      ],
+      mask: [
+        ["bi", "bi", "bi", "bi", "bi"],
+        ["pi", "ma", "ma", "ma", "po"],
+        ["ma", "ma", "ma", "ma", "ma"],
+        ["bo", "bo", "bo", "bo", "bo"],
+      ],
+    },
+  })
 
-    function getMachineSize(type) {
-        return {
-            width: machineTypes.value[type].width * stageStore.cellWidth,
-            height: machineTypes.value[type].height * stageStore.cellHeight,
-        };
-    }
-
-    return {
-        getMachineSize,
-    }
-})
+  return {
+    machineTypes,
+  };
+});
