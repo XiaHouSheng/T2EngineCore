@@ -11,7 +11,7 @@ const machineRootContainer = new Container();
 // 传送带容器
 const beltRootContainer = new Container();
 // 管道容器
-const pipeContainer = new Container();
+const pipeRootContainer = new Container();
 // 背景容器
 const backgroundContainer = new Container();
 
@@ -19,7 +19,7 @@ const backgroundContainer = new Container();
 viewportContainer.addChild(
     backgroundContainer,
     beltRootContainer,
-    pipeContainer,
+    pipeRootContainer,
     machineRootContainer,
     indicatorContainer,
 )
@@ -33,7 +33,7 @@ export {
     viewportContainer,
     indicatorContainer,
     machineRootContainer,
-    pipeContainer,
+    pipeRootContainer,
     beltRootContainer,
     backgroundContainer,
 }

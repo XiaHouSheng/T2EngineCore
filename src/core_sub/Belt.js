@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { useBeltStore } from "../stores/BeltStore";
 import { drawBelt, dropDrawBelt } from "../core_stage/BeltStage.js";
-import { saveBelt, dropBelt, findBeltNearBy } from "../core_middleware/BeltStorage";
+import { saveBelt, dropBelt, findBeltNearBy } from "../core_storage/BeltStorage.js";
 import { detectOnPlaceBelt } from "../core_middleware/ConflictDetect.js";
 /**
  * @param {

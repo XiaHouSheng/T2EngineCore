@@ -43,7 +43,7 @@ function findBeltNearBy(belt) {
     if (upY < rowCount && upX < colCount && storageStore.conveyorLocations[upY][upX] !== null) {
       temp_belt = storageStore.conveyorLocations[upY][upX];
       const [id, in_dir, out_dir] = temp_belt.split(".");
-      if (belt_.out == in_dir && !visited.has(id)) {
+      if ((out_dir == belt.in || belt_.out == in_dir) && !visited.has(id)) {
         visited.add(id);
         queue.push(storageStore.conveyors[id]);
       }
@@ -51,7 +51,7 @@ function findBeltNearBy(belt) {
     if (downY < rowCount && downX < colCount && storageStore.conveyorLocations[downY][downX] !== null) {
       temp_belt = storageStore.conveyorLocations[downY][downX];
       const [id, in_dir, out_dir] = temp_belt.split(".");
-      if (belt_.out == in_dir && !visited.has(id)) {
+      if ((out_dir == belt.in || belt_.out == in_dir) && !visited.has(id)) {
         visited.add(id);
         queue.push(storageStore.conveyors[id]);
       }
@@ -59,7 +59,7 @@ function findBeltNearBy(belt) {
     if (leftY < rowCount && leftX < colCount && storageStore.conveyorLocations[leftY][leftX] !== null) {
       temp_belt = storageStore.conveyorLocations[leftY][leftX];
       const [id, in_dir, out_dir] = temp_belt.split(".");
-      if (belt_.out == in_dir && !visited.has(id)) {
+      if ((out_dir == belt.in || belt_.out == in_dir) && !visited.has(id)) {
         visited.add(id);
         queue.push(storageStore.conveyors[id]);
       }
@@ -67,7 +67,7 @@ function findBeltNearBy(belt) {
     if (rightY < rowCount && rightX < colCount && storageStore.conveyorLocations[rightY][rightX] !== null) {
       temp_belt = storageStore.conveyorLocations[rightY][rightX];
       const [id, in_dir, out_dir] = temp_belt.split(".");
-      if (belt_.out == in_dir && !visited.has(id)) {
+      if ((out_dir == belt.in || belt_.out == in_dir) && !visited.has(id)) {
         visited.add(id);
         queue.push(storageStore.conveyors[id]);
       }

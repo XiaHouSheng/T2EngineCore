@@ -45,17 +45,17 @@ export const useStorageStore = defineStore("StorageStore", () => {
   // 管道存储
   const pipes = ref({}); // id -> meta
   const pipeObjects = markRaw({}); // id -> object
-  const pipeLocations = ref(() => {
-    return (arrays = Array.from(
+  const pipeLocations = ref(
+    Array.from(
       {
         length: rowCount.value,
       },
       () =>
         Array.from({
           length: colCount.value,
-        }),
-    ).fill(null));
-  }); // [x][y] -> id
+        }).fill(null),
+    ),
+  ); // [x][y] -> id
 
   return {
     width,

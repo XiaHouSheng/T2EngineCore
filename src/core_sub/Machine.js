@@ -1,4 +1,4 @@
-import { saveMachine, dropMachine } from "../core_middleware/MachineStorage.js";
+import { saveMachine, dropMachine } from "../core_storage/MachineStorage.js";
 import { drawMachine, dropDrawMachine } from "../core_stage/MachineStage.js";
 import { useMachineStore } from "../stores/MachineStore.js";
 import { detectOnPlaceMachine } from "../core_middleware/ConflictDetect.js";

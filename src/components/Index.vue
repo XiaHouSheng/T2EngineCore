@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { app } from "../core_stage/SimStage.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 import { drawGridLines } from "../core_stage/GridStage.js";
@@ -15,11 +15,7 @@ import {
   deleteBatchBelt,
   deleteBelt,
 } from "../core_sub/Belt.js";
-import {
-  findBeltNearBy,
-  getBeltByPosition,
-} from "../core_middleware/BeltStorage.js";
-import { getMachineByPosition } from "../core_middleware/MachineStorage.js";
+import { handleKeyboard } from "../core_middleware/KeyboardHandle.js";
 
 const storageStore = useStorageStore();
 const canvas = ref(null);
@@ -36,20 +32,26 @@ const canvas = ref(null);
 })();
 
 onMounted(() => {
+  window.addEventListener("keydown", handleKeyboard);
   const machine = createMachine("testType4");
-  let rotatedMachine = rotateMachine(machine);
-  placeMachine(rotatedMachine, 4, 4);
+  placeMachine(machine, 4, 4);
   placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
-  const belt_choose = getBeltByPosition(7, 8);
-  const belts = deleteBatchBelt(belt_choose);
-  console.log(belts);
-  const machine_choose = getMachineByPosition(4, 4);
-  console.log(machine_choose);
+});
+
+onUnmounted(() => {
+  app.destroy();
+  window.removeEventListener("keydown", handleKeyboard);
 });
 </script>
 
 <template>
   <div ref="canvas"></div>
+  <div>
+    <button>Place Machine</button>
+    <button>Place Belt</button>
+    <button>Delete Belt</button>
+    <button>Delete Machine</button>
+  </div>
 </template>
 
 <style scoped></style>
