@@ -7,10 +7,13 @@ import {
   onStartSelectMove,
   onStartSelectRotate,
   onStartSelectDelete,
+  onStartPlaceChangeMode,
   onCancel,
+  proxyForHandle,
 } from "../core_sub/Indicator.js";
 export const useCommandStore = defineStore("command", () => {
   const select_command = ref("default");
+  const last_command = ref("default");
   const keyboard_command = markRaw({
     e: "PLACE_BELT",
     q: "PLACE_PIPE",
@@ -20,15 +23,17 @@ export const useCommandStore = defineStore("command", () => {
     r: "ROTATE",
     f: "DELETE",
   });
-  const command_keyboard = markRaw({
-    PLACE_BELT: "e",
-    PLACE_PIPE: "q",
-    SELECT: "x",
-    CANCEL: "escape",
-    MOVE: "m",
-    ROTATE: "r",
-    DELETE: "f",
-  });
+  const keyboard_base_command = markRaw({
+    e: "PLACE_BELT",
+    q: "PLACE_PIPE",
+    x: "SELECT",
+    escape: "CANCEL",
+  })
+  const keyboard_sub_command = markRaw({
+    m: "MOVE",
+    r: "ROTATE",
+    f: "DELETE",
+  })
   const command_handle = markRaw({
     // 单命令
     PLACE_BELT: onStartPlaceBelt,
@@ -36,13 +41,19 @@ export const useCommandStore = defineStore("command", () => {
     SELECT: onStartSelect,
     CANCEL: onCancel,
     // 组合命令
-    PLACE_BELT_PLACE_PIPE: onStartPlacePipe,
-    PLACE_PIPE_PLACE_BELT: onStartPlaceBelt,
+    PLACE_BELT_ROTATE: onStartPlaceChangeMode,
+    PLACE_PIPE_ROTATE: onStartPlaceChangeMode,
     SELECT_MOVE: onStartSelectMove,
     SELECT_ROTATE: onStartSelectRotate,
     SELECT_DELETE: onStartSelectDelete,
   });
-  return { keyboard_command, select_command, command_keyboard, command_handle };
+
+  // 代理命令处理函数
+  for (let key in command_handle) {
+    command_handle[key] = proxyForHandle(command_handle[key], key);
+  }
+
+  return { keyboard_base_command, keyboard_command, keyboard_sub_command, select_command, last_command, command_handle };
 });
 
 export const CMD_DEFAULT = "default";

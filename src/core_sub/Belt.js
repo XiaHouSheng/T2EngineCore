@@ -1,7 +1,11 @@
 import { nanoid } from "nanoid";
 import { useBeltStore } from "../stores/BeltStore";
 import { drawBelt, dropDrawBelt } from "../core_stage/BeltStage.js";
-import { saveBelt, dropBelt, findBeltNearBy } from "../core_storage/BeltStorage.js";
+import {
+  saveBelt,
+  dropBelt,
+  findBeltNearBy,
+} from "../core_storage/BeltStorage.js";
 import { detectOnPlaceBelt } from "../core_middleware/ConflictDetect.js";
 /**
  * @param {
@@ -43,9 +47,51 @@ function deleteBelt(belt) {
   return belt;
 }
 
-function placeBatchBelt(start_position, end_position, change_mode = true) {
+function placeBatchBelt(
+  start_position,
+  end_position,
+  start_belt_dir_in = null,
+  change_mode = true,
+) {
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
+
+  if (startX === endX && startY === endY) {
+    return;
+  }
+  if (startX === endX) {
+    const delta_num = startY - endY;
+    const direction_out = delta_num > 0 ? "up" : "down";
+    const direction_in = start_belt_dir_in || direction_out;
+    for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
+      let pre_i = delta_num > 0 ? -i : i;
+      placeBelt(
+        createBelt("default"),
+        startX,
+        startY + pre_i,
+        direction_in,
+        direction_out,
+      );
+    }
+    return;
+  }
+  if (startY === endY) {
+    const delta_num = startX - endX;
+    const direction_out = delta_num > 0 ? "left" : "right";
+    const direction_in = start_belt_dir_in || direction_out;
+    for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
+      let pre_i = delta_num > 0 ? -i : i;
+      placeBelt(
+        createBelt("default"),
+        startX + pre_i,
+        startY,
+        direction_in,
+        direction_out,
+      );
+    }
+    return;
+  }
+
   const crossX = change_mode ? startX : endX;
   const crossY = change_mode ? endY : startY;
   let delta_num, direction_in, direction_out;
@@ -78,6 +124,9 @@ function placeBatchBelt(start_position, end_position, change_mode = true) {
         next_x = startX - i;
         next_y = startY;
         break;
+    }
+    if (i === 0 && start_belt_dir_in) {
+      direction_in = start_belt_dir_in;
     }
     placeBelt(
       createBelt("default"),
@@ -130,11 +179,18 @@ function placeBatchBelt(start_position, end_position, change_mode = true) {
 }
 
 function deleteBatchBelt(belt) {
-    const belts = findBeltNearBy(belt);
-    for (let i = 0; i < belts.length; i++) {
-        deleteBelt(belts[i]);
-    }
-    return belts;
+  const belts = findBeltNearBy(belt);
+  for (let i = 0; i < belts.length; i++) {
+    deleteBelt(belts[i]);
+  }
+  return belts;
 }
 
-export { createBelt, placeBelt, rotateBelt, deleteBelt, placeBatchBelt, deleteBatchBelt };
+export {
+  createBelt,
+  placeBelt,
+  rotateBelt,
+  deleteBelt,
+  placeBatchBelt,
+  deleteBatchBelt,
+};
