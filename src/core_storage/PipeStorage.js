@@ -78,8 +78,8 @@ function findPipeNearBy(pipe) {
 
 function getPipeByPosition(grid_x, grid_y) {
   const storageStore = useStorageStore();
-  const pipe_id_in_out = storageStore.pipeLocations[grid_y - 1][grid_x - 1];
-  if (pipe_id_in_out === null) {
+  const pipe_id_in_out = storageStore.pipeLocations?.[grid_y - 1]?.[grid_x - 1];
+  if (pipe_id_in_out == undefined) {
     return null;
   }
   return storageStore.pipes[pipe_id_in_out.split(".")[0]];

@@ -21,8 +21,8 @@ function mapMachineArea(machine, machineCont, func) {
 // 根据网格坐标获取机器
 function getMachineByPosition(grid_x, grid_y) {
   const storageStore = useStorageStore();
-  const machine_type = storageStore.machineLocations[grid_y - 1][grid_x - 1];
-  if (machine_type === null) {
+  const machine_type = storageStore.machineLocations?.[grid_y - 1]?.[grid_x - 1];
+  if (machine_type == undefined) {
     return null;
   }
   return storageStore.machines[machine_type.split(".")[0]];

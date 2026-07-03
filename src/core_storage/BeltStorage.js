@@ -78,8 +78,8 @@ function findBeltNearBy(belt) {
 
 function getBeltByPosition(grid_x, grid_y) {
   const storageStore = useStorageStore();
-  const belt_id_in_out = storageStore.conveyorLocations[grid_y - 1][grid_x - 1];
-  if (belt_id_in_out === null) {
+  const belt_id_in_out = storageStore.conveyorLocations?.[grid_y - 1]?.[grid_x - 1];
+  if (belt_id_in_out == undefined) {
     return null;
   }
   return storageStore.conveyors[belt_id_in_out.split(".")[0]];

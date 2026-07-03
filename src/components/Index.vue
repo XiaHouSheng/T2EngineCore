@@ -15,10 +15,17 @@ import {
   deleteBatchBelt,
   deleteBelt,
 } from "../core_sub/Belt.js";
-import { initPlaceIndicator } from "../core_sub/Indicator.js";
-import { drawBatchMask, drawMaskFromPosition, drawSpecialMask } from "../core_stage/IndicatorStage.js";
+import { initIndicator } from "../core_sub/Indicator.js";
+import {
+  drawBatchMask,
+  drawMaskFromPosition,
+  drawSpecialMask,
+} from "../core_stage/IndicatorStage.js";
 import { handleKeyboard } from "../core_middleware/KeyboardHandle.js";
-import { findBeltNearBy, getBeltByPosition } from "../core_storage/BeltStorage.js";
+import {
+  findBeltNearBy,
+  getBeltByPosition,
+} from "../core_storage/BeltStorage.js";
 const storageStore = useStorageStore();
 const canvas = ref(null);
 
@@ -26,7 +33,7 @@ const canvas = ref(null);
   globalThis.__PIXI_APP__ = app;
   drawGridLines();
   drawHitArea();
-  initPlaceIndicator();
+  initIndicator();
   await app.init({
     width: storageStore.width,
     height: storageStore.height,
@@ -40,8 +47,8 @@ onMounted(() => {
   const machine = createMachine("testType4");
   placeMachine(machine, 4, 4);
   placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
-  const choose_belt = getBeltByPosition(7, 8)
-  const belts = findBeltNearBy(choose_belt)
+  const choose_belt = getBeltByPosition(7, 8);
+  const belts = findBeltNearBy(choose_belt);
   /*
   drawSpecialMask(
     {gridX: 4, gridY: 4},

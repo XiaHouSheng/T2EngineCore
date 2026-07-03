@@ -1,5 +1,7 @@
 import { indicatorContainer } from "./SimStage";
 import { IndicatorGraphic } from "../core_graphic/IndicatorGraphic.js";
+import { SelectGraphic } from "../core_graphic/SelectGraphic.js";
+import { scanGridByPixel } from "../core_middleware/GridRegistry.js";
 
 //一个Cube的遮罩指示
 function drawMask(position) {
@@ -17,9 +19,12 @@ function drawSpecialMask(position, size, pivot) {
 
 //批量cube的遮罩指示
 function drawBatchMask(positions) {
+  const masks = [];
   positions.forEach((position) => {
-    drawMask(position);
+    const mask = drawMask(position);
+    masks.push(mask);
   });
+  return masks;
 }
 
 //从位置到位置的遮罩指示
@@ -31,9 +36,9 @@ function drawMaskFromPosition(
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
   const masks = [];
-  
+
   if (startX === endX && startY === endY) {
-    return masks; 
+    return masks;
   }
 
   if (startX === endX) {
@@ -43,7 +48,7 @@ function drawMaskFromPosition(
       const mask = drawMask({ gridX: startX, gridY: startY + pre_i });
       masks.push(mask);
     }
-    return masks; 
+    return masks;
   }
 
   if (startY === endY) {
@@ -53,7 +58,7 @@ function drawMaskFromPosition(
       const mask = drawMask({ gridX: startX + pre_i, gridY: startY });
       masks.push(mask);
     }
-    return masks; 
+    return masks;
   }
 
   const crossX = change_mode ? startX : endX;
@@ -92,12 +97,62 @@ function drawMaskFromPosition(
     const mask = drawMask({ gridX: next_x, gridY: next_y });
     masks.push(mask);
   }
-  return masks; 
+  return masks;
 }
 
 //画框选框
 function drawSelectBox() {
-  
+  const selectBox = new SelectGraphic();
+  indicatorContainer.addChild(selectBox);
+  return selectBox;
 }
 
-export { drawMask, drawSpecialMask, drawBatchMask, drawMaskFromPosition };
+function drawMaskSelectArea(start_position, end_position, now_keys) {
+  const { machines, belts, pipes } = scanGridByPixel(
+    start_position,
+    end_position,
+  );
+  let masks = {
+    machines: {},
+    belts: {},
+    pipes: {},
+  };
+  Object.keys(machines).forEach((key) => {
+    if (now_keys.has(key)) return;
+    const machine = machines[key];
+    const mask = drawSpecialMask(
+      { gridX: machine.gridX, gridY: machine.gridY },
+      { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
+      machine.anchor[machine.rotation],
+    );
+    now_keys.add(key);
+    masks.machines[key] = mask;
+  });
+  Object.keys(belts).forEach((key) => {
+    if (now_keys.has(key)) return;
+    const belt = belts[key];
+    const mask = drawMask({ gridX: belt.gridX, gridY: belt.gridY });
+    now_keys.add(key);
+    masks.belts[key] = mask;
+  });
+  Object.keys(pipes).forEach((key) => {
+    if (now_keys.has(key)) return;
+    const pipe = pipes[key];
+    const mask = drawMask({ gridX: pipe.gridX, gridY: pipe.gridY });
+    now_keys.add(key);
+    masks.pipes[key] = mask;
+  });
+  return {
+    masks,
+    now_keys,
+  };
+}
+
+export {
+  drawMask,
+  drawSelectBox,
+  drawSpecialMask,
+  drawBatchMask,
+  drawMaskFromPosition,
+  drawMaskSelectArea,
+};
