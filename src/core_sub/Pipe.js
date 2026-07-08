@@ -3,6 +3,7 @@ import { usePipeStore } from "../stores/PipeStore";
 import { drawPipe, dropDrawPipe } from "../core_stage/PipeStage.js";
 import { savePipe, dropPipe, findPipeNearBy } from "../core_storage/PipeStorage.js";
 import { detectOnPlacePipe } from "../core_middleware/ConflictDetect.js";
+import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 /**
  * @param {
  *  id: string,
@@ -35,6 +36,21 @@ function rotatePipe(pipe) {
   const pipeStore = usePipeStore();
   pipe.in = pipeStore.rotateMap[pipe.in];
   pipe.out = pipeStore.rotateMap[pipe.out];
+  return pipe;
+}
+
+function rotatePipeByCenter(pipe, x, y) {
+  // 计算旋转后的中心点坐标（顺时针 90°）
+  const rotateX = x + y - pipe.y;
+  const rotateY = y - x + pipe.x;
+  pipe.x = rotateX;
+  pipe.y = rotateY;
+  // Mask旋转
+  pipe = rotatePipe(pipe);
+  // 重新计算网格坐标
+  const { gridX, gridY } = pixelToGridNoneOffset(pipe.x, pipe.y);
+  pipe.gridX = gridX;
+  pipe.gridY = gridY;
   return pipe;
 }
 
@@ -137,4 +153,4 @@ function deleteBatchPipe(pipe) {
     return pipes;
 }
 
-export { createPipe, placePipe, rotatePipe, deletePipe, placeBatchPipe, deleteBatchPipe };
+export { createPipe, placePipe, rotatePipe, rotatePipeByCenter, deletePipe, placeBatchPipe, deleteBatchPipe, };

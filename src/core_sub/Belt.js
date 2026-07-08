@@ -7,6 +7,7 @@ import {
   findBeltNearBy,
 } from "../core_storage/BeltStorage.js";
 import { detectOnPlaceBelt } from "../core_middleware/ConflictDetect.js";
+import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 /**
  * @param {
  *  id: string,
@@ -39,6 +40,21 @@ function rotateBelt(belt) {
   const beltStore = useBeltStore();
   belt.in = beltStore.rotateMap[belt.in];
   belt.out = beltStore.rotateMap[belt.out];
+  return belt;
+}
+
+function rotateBeltByCenter(belt, x, y) {
+  // 计算旋转后的中心点坐标（顺时针 90°）
+  const rotateX = x + y - belt.y;
+  const rotateY = y - x + belt.x;
+  belt.x = rotateX;
+  belt.y = rotateY;
+  // Mask旋转
+  belt = rotateBelt(belt);
+  // 重新计算网格坐标
+  const { gridX, gridY } = pixelToGridNoneOffset(belt.x, belt.y);
+  belt.gridX = gridX;
+  belt.gridY = gridY;
   return belt;
 }
 
@@ -190,6 +206,7 @@ export {
   createBelt,
   placeBelt,
   rotateBelt,
+  rotateBeltByCenter,
   deleteBelt,
   placeBatchBelt,
   deleteBatchBelt,

@@ -1,8 +1,9 @@
-import { saveMachine, dropMachine } from "../core_storage/MachineStorage.js";
+import { saveMachine, dropMachine, getMachineGridPosition } from "../core_storage/MachineStorage.js";
 import { drawMachine, dropDrawMachine } from "../core_stage/MachineStage.js";
 import { useMachineStore } from "../stores/MachineStore.js";
 import { detectOnPlaceMachine } from "../core_middleware/ConflictDetect.js";
 import { nanoid } from "nanoid";
+import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 
 /**
  * 创建机器
@@ -22,6 +23,9 @@ import { nanoid } from "nanoid";
  *     gridHeight: number,
  *     gridX: number,
  *     gridY: number,
+ *     x: number,
+ *     y: number,
+ *
  * } machine 机器对象
  * @returns 机器对象
  */
@@ -67,9 +71,31 @@ function rotateMachine(machine) {
   return machine;
 }
 
+function rotateMachineByCenter(machine, x, y) {
+  // 计算旋转后的中心点坐标（顺时针 90°）
+  const rotateX = x + y - machine.centerY;
+  const rotateY = y - x + machine.centerX;
+  machine.centerX = rotateX;
+  machine.centerY = rotateY;
+  // Mask旋转
+  machine = rotateMachine(machine);
+  // 重新计算网格坐标
+  const { gridX, gridY } = getMachineGridPosition(machine);
+
+  machine.gridX = gridX;
+  machine.gridY = gridY;
+  return machine;
+}
+
 function deleteMachine(machine) {
   dropDrawMachine(dropMachine(machine));
   return machine;
 }
 
-export { createMachine, placeMachine, deleteMachine, rotateMachine };
+export {
+  createMachine,
+  placeMachine,
+  deleteMachine,
+  rotateMachine,
+  rotateMachineByCenter,
+};

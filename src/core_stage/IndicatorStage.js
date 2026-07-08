@@ -107,6 +107,50 @@ function drawSelectBox() {
   return selectBox;
 }
 
+//画机器的mask
+function drawMachineMask(machines, now_keys) {
+  const masks = {};
+  Object.keys(machines).forEach((key) => {
+    if (now_keys.has(key)) return;
+    const machine = machines[key];
+    const mask = drawSpecialMask(
+      { gridX: machine.gridX, gridY: machine.gridY },
+      { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
+      machine.anchor[machine.rotation],
+    );
+    now_keys.add(key);
+    masks[key] = mask;
+  });
+  return masks;
+}
+
+//画带的mask
+function drawBeltMask(belts, now_keys) {
+  const masks = {};
+  Object.keys(belts).forEach((key) => {
+    if (now_keys.has(key)) return;
+    const belt = belts[key];
+    const mask = drawMask({ gridX: belt.gridX, gridY: belt.gridY });
+    now_keys.add(key);
+    masks[key] = mask;
+  });
+  return masks;
+}
+
+//画管道的mask
+function drawPipeMask(pipes, now_keys) {
+  const masks = {};
+  Object.keys(pipes).forEach((key) => {
+    if (now_keys.has(key)) return;
+    const pipe = pipes[key];
+    const mask = drawMask({ gridX: pipe.gridX, gridY: pipe.gridY });
+    now_keys.add(key);
+    masks[key] = mask;
+  });
+  return masks;
+}
+
+//画框选后的mask
 function drawMaskSelectArea(start_position, end_position, now_keys) {
   const { machines, belts, pipes } = scanGridByPixel(
     start_position,
@@ -117,31 +161,9 @@ function drawMaskSelectArea(start_position, end_position, now_keys) {
     belts: {},
     pipes: {},
   };
-  Object.keys(machines).forEach((key) => {
-    if (now_keys.has(key)) return;
-    const machine = machines[key];
-    const mask = drawSpecialMask(
-      { gridX: machine.gridX, gridY: machine.gridY },
-      { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
-      machine.anchor[machine.rotation],
-    );
-    now_keys.add(key);
-    masks.machines[key] = mask;
-  });
-  Object.keys(belts).forEach((key) => {
-    if (now_keys.has(key)) return;
-    const belt = belts[key];
-    const mask = drawMask({ gridX: belt.gridX, gridY: belt.gridY });
-    now_keys.add(key);
-    masks.belts[key] = mask;
-  });
-  Object.keys(pipes).forEach((key) => {
-    if (now_keys.has(key)) return;
-    const pipe = pipes[key];
-    const mask = drawMask({ gridX: pipe.gridX, gridY: pipe.gridY });
-    now_keys.add(key);
-    masks.pipes[key] = mask;
-  });
+  masks.machines = drawMachineMask(machines, now_keys);
+  masks.belts = drawBeltMask(belts, now_keys);
+  masks.pipes = drawPipeMask(pipes, now_keys);
   return {
     masks,
     now_keys,
@@ -153,6 +175,9 @@ export {
   drawSelectBox,
   drawSpecialMask,
   drawBatchMask,
+  drawPipeMask,
+  drawBeltMask,
+  drawMachineMask,
   drawMaskFromPosition,
   drawMaskSelectArea,
 };

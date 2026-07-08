@@ -2,10 +2,13 @@ import { useStorageStore } from "../stores/StorageStore.js";
 
 function savePipe(pipe, pipe_container) {
   const storageStore = useStorageStore();
+  pipe.x = pipe_container.position.x;
+  pipe.y = pipe_container.position.y;
   storageStore.pipes[pipe.id] = pipe;
   storageStore.pipeObjects[pipe.id] = pipe_container;
   storageStore.pipeLocations[pipe.gridY - 1][pipe.gridX - 1] =
     `${pipe.id}.${pipe.in}.${pipe.out}`;
+  //console.log(storageStore.pipeLocations);
 }
 
 function dropPipe(pipe) {
@@ -40,7 +43,11 @@ function findPipeNearBy(pipe) {
     const rightX = pipe_.gridX - 1 + 1;
     const rightY = pipe_.gridY - 1;
     let temp_pipe;
-    if (upY < rowCount && upX < colCount && storageStore.pipeLocations[upY][upX] !== null) {
+    if (
+      upY < rowCount &&
+      upX < colCount &&
+      storageStore.pipeLocations[upY][upX] !== null
+    ) {
       temp_pipe = storageStore.pipeLocations[upY][upX];
       const [id, in_dir, out_dir] = temp_pipe.split(".");
       if ((out_dir == pipe.in || pipe_.out == in_dir) && !visited.has(id)) {
@@ -48,7 +55,11 @@ function findPipeNearBy(pipe) {
         queue.push(storageStore.pipes[id]);
       }
     }
-    if (downY < rowCount && downX < colCount && storageStore.pipeLocations[downY][downX] !== null) {
+    if (
+      downY < rowCount &&
+      downX < colCount &&
+      storageStore.pipeLocations[downY][downX] !== null
+    ) {
       temp_pipe = storageStore.pipeLocations[downY][downX];
       const [id, in_dir, out_dir] = temp_pipe.split(".");
       if ((out_dir == pipe.in || pipe_.out == in_dir) && !visited.has(id)) {
@@ -56,7 +67,11 @@ function findPipeNearBy(pipe) {
         queue.push(storageStore.pipes[id]);
       }
     }
-    if (leftY < rowCount && leftX < colCount && storageStore.pipeLocations[leftY][leftX] !== null) {
+    if (
+      leftY < rowCount &&
+      leftX < colCount &&
+      storageStore.pipeLocations[leftY][leftX] !== null
+    ) {
       temp_pipe = storageStore.pipeLocations[leftY][leftX];
       const [id, in_dir, out_dir] = temp_pipe.split(".");
       if ((out_dir == pipe.in || pipe_.out == in_dir) && !visited.has(id)) {
@@ -64,7 +79,11 @@ function findPipeNearBy(pipe) {
         queue.push(storageStore.pipes[id]);
       }
     }
-    if (rightY < rowCount && rightX < colCount && storageStore.pipeLocations[rightY][rightX] !== null) {
+    if (
+      rightY < rowCount &&
+      rightX < colCount &&
+      storageStore.pipeLocations[rightY][rightX] !== null
+    ) {
       temp_pipe = storageStore.pipeLocations[rightY][rightX];
       const [id, in_dir, out_dir] = temp_pipe.split(".");
       if ((out_dir == pipe.in || pipe_.out == in_dir) && !visited.has(id)) {

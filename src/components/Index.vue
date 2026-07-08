@@ -45,7 +45,8 @@ const canvas = ref(null);
 onMounted(() => {
   window.addEventListener("keydown", handleKeyboard);
   const machine = createMachine("testType4");
-  placeMachine(machine, 4, 4);
+  const rotate_machine = rotateMachine(machine);
+  placeMachine(rotate_machine, 4, 4);
   placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
   const choose_belt = getBeltByPosition(7, 8);
   const belts = findBeltNearBy(choose_belt);
