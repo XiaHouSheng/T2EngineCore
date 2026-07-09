@@ -4,15 +4,15 @@ import { SelectGraphic } from "../core_graphic/SelectGraphic.js";
 import { scanGridByPixel } from "../core_middleware/GridRegistry.js";
 
 //一个Cube的遮罩指示
-function drawMask(position) {
-  const mask = new IndicatorGraphic(position);
+function drawMask(position, conflict = false) {
+  const mask = new IndicatorGraphic(position, undefined, undefined, conflict);
   indicatorContainer.addChild(mask);
   return mask;
 }
 
 //指定长宽的遮罩指示
-function drawSpecialMask(position, size, pivot) {
-  const mask = new IndicatorGraphic(position, size, pivot);
+function drawSpecialMask(position, size, pivot, is_conflict = false) {
+  const mask = new IndicatorGraphic(position, size, pivot, is_conflict);
   indicatorContainer.addChild(mask);
   return mask;
 }
@@ -108,7 +108,7 @@ function drawSelectBox() {
 }
 
 //画机器的mask
-function drawMachineMask(machines, now_keys) {
+function drawMachineMask(machines, now_keys, is_conflict = false) {
   const masks = {};
   Object.keys(machines).forEach((key) => {
     if (now_keys.has(key)) return;
@@ -117,6 +117,7 @@ function drawMachineMask(machines, now_keys) {
       { gridX: machine.gridX, gridY: machine.gridY },
       { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
       machine.anchor[machine.rotation],
+      is_conflict,
     );
     now_keys.add(key);
     masks[key] = mask;
@@ -125,12 +126,16 @@ function drawMachineMask(machines, now_keys) {
 }
 
 //画带的mask
-function drawBeltMask(belts, now_keys) {
+function drawBeltMask(belts, now_keys, is_conflict = false) {
   const masks = {};
   Object.keys(belts).forEach((key) => {
     if (now_keys.has(key)) return;
     const belt = belts[key];
-    const mask = drawMask({ gridX: belt.gridX, gridY: belt.gridY });
+    console.log()
+    const mask = drawMask(
+      { gridX: belt.gridX, gridY: belt.gridY },
+      is_conflict,
+    );
     now_keys.add(key);
     masks[key] = mask;
   });
@@ -138,12 +143,15 @@ function drawBeltMask(belts, now_keys) {
 }
 
 //画管道的mask
-function drawPipeMask(pipes, now_keys) {
+function drawPipeMask(pipes, now_keys, is_conflict = false) {
   const masks = {};
   Object.keys(pipes).forEach((key) => {
     if (now_keys.has(key)) return;
     const pipe = pipes[key];
-    const mask = drawMask({ gridX: pipe.gridX, gridY: pipe.gridY });
+    const mask = drawMask(
+      { gridX: pipe.gridX, gridY: pipe.gridY },
+      is_conflict,
+    );
     now_keys.add(key);
     masks[key] = mask;
   });
@@ -170,6 +178,21 @@ function drawMaskSelectArea(start_position, end_position, now_keys) {
   };
 }
 
+//画冲突mask
+function drawConflictMaskOnMove(metaConflict) {
+  let now_keys = new Set();
+  let conflictGraphics = [];
+  const machine_masks = drawMachineMask(metaConflict.machines, now_keys, true);
+  const belt_masks = drawBeltMask(metaConflict.belts, now_keys, true);
+  const pipe_masks = drawPipeMask(metaConflict.pipes, now_keys, true);
+  conflictGraphics = conflictGraphics.concat(
+    Object.values(machine_masks),
+    Object.values(belt_masks),
+    Object.values(pipe_masks),
+  )
+  return conflictGraphics;
+}
+
 export {
   drawMask,
   drawSelectBox,
@@ -180,4 +203,5 @@ export {
   drawMachineMask,
   drawMaskFromPosition,
   drawMaskSelectArea,
+  drawConflictMaskOnMove,
 };

@@ -6,6 +6,7 @@ class IndicatorGraphic extends Graphics {
     position,
     size = { gridWidth: 1, gridHeight: 1 },
     pivot = { x: 0.5, y: 0.5 },
+    is_conflict = false,
   ) {
     super();
     const cellSize = getCellSize();
@@ -21,7 +22,8 @@ class IndicatorGraphic extends Graphics {
     );
     this.x = gridX * this.cellWidth - this.cellWidth * 0.5;
     this.y = gridY * this.cellHeight - this.cellHeight * 0.5;
-    this.fill({ color: 0x0000ff, alpha: 0.5 });
+    if (!is_conflict) this.fill({ color: 0x0000ff, alpha: 0.5 });
+    else this.fill({ color: 0xff0000, alpha: 0.5 });
   }
 
   moveToGrid(position) {

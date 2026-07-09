@@ -2,14 +2,13 @@ import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 
 // 映射机器区域
-function mapMachineArea(machine, machineCont, func) {
+function mapMachineArea(machine, func, use_center = false) {
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
-  const { x, y } = machineCont.position;
-  const { _x, _y } = machineCont.pivot;
-  const originX = Number.parseInt(x - _x + cellWidth / 2);
-  const originY = Number.parseInt(y - _y + cellHeight / 2);
+  const {leftTopX, leftTopY} = use_center ? getLeftTopPositionByCenter(machine) : getLeftTopPosition(machine);
+  const originX = Number.parseInt(leftTopX);
+  const originY = Number.parseInt(leftTopY);
   const startGridX = Number.parseInt(originX / cellWidth);
   const startGridY = Number.parseInt(originY / cellHeight);
   for (let i = 0; i < machine.gridWidth; i++) {
@@ -106,7 +105,7 @@ function saveMachine(machine, machine_container) {
   machine.centerY = centerY;
   storageStore.machines[machine.id] = machine;
   storageStore.machineObjects[machine.id] = machine_container;
-  mapMachineArea(machine, machine_container, (x, y, maskType) => {
+  mapMachineArea(machine, (x, y, maskType) => {
     storageStore.machineLocations[y][x] = `${machine.id}.${maskType}`;
   });
   //console.log(storageStore.machineLocations); 
@@ -116,7 +115,7 @@ function saveMachine(machine, machine_container) {
 function dropMachine(machine) {
   const storageStore = useStorageStore();
   const machine_container = storageStore.machineObjects[machine.id];
-  mapMachineArea(machine, machine_container, (x, y) => {
+  mapMachineArea(machine, (x, y) => {
     storageStore.machineLocations[y][x] = null;
   });
   delete storageStore.machines[machine.id];
@@ -129,4 +128,5 @@ export {
   dropMachine,
   getMachineByPosition,
   getMachineGridPosition,
+  mapMachineArea,
 };

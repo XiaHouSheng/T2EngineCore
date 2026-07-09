@@ -43,6 +43,7 @@ function getCellSize() {
   };
 }
 
+
 export {
   gridToPixel,
   pixelToGrid,

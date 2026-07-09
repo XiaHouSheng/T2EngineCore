@@ -3,8 +3,6 @@ import { drawMachine, dropDrawMachine } from "../core_stage/MachineStage.js";
 import { useMachineStore } from "../stores/MachineStore.js";
 import { detectOnPlaceMachine } from "../core_middleware/ConflictDetect.js";
 import { nanoid } from "nanoid";
-import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
-
 /**
  * 创建机器
  * @param {

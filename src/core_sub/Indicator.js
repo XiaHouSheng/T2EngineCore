@@ -1,41 +1,33 @@
-import { Graphics } from "pixi.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 import {
   deleteMachine,
   placeMachine,
-  rotateMachine,
   rotateMachineByCenter,
 } from "./Machine.js";
-import {
-  deleteBelt,
-  placeBelt,
-  rotateBelt,
-  rotateBeltByCenter,
-} from "./Belt.js";
-import {
-  deletePipe,
-  placePipe,
-  rotatePipe,
-  rotatePipeByCenter,
-} from "./Pipe.js";
+import { deleteBelt, placeBelt, rotateBeltByCenter } from "./Belt.js";
+import { deletePipe, placePipe, rotatePipeByCenter } from "./Pipe.js";
 import {
   drawMask,
-  drawSpecialMask,
-  drawBatchMask,
   drawSelectBox,
   drawMaskFromPosition,
   drawMaskSelectArea,
   drawMachineMask,
   drawBeltMask,
   drawPipeMask,
+  drawConflictMaskOnMove,
 } from "../core_stage/IndicatorStage.js";
+import { detectOnMoveMask } from "../core_middleware/ConflictDetect.js";
+import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 
 let pipeOrBeltMode = true;
 let isSelectMoving = false;
 
 let placeIndicator = null;
 let selectIndicator = null;
+
 let indicatorGraphics = [];
+let conflictGraphics = [];
+
 let selectGraphics = {
   machines: {},
   belts: {},
@@ -43,6 +35,7 @@ let selectGraphics = {
 };
 let metaBackup = { machines: {}, belts: {}, pipes: {} };
 let metaRotateMove = { machines: {}, belts: {}, pipes: {} };
+
 let base_grid_x = null,
   base_grid_y = null,
   now_grid_x = null,
@@ -98,6 +91,12 @@ function refreshSelectIndicator() {
   selectIndicator.visible = false;
 }
 
+function refreshConflictIndicator() {
+  if (conflictGraphics.length == 0) return;
+  conflictGraphics.forEach((item) => item.destroy());
+  conflictGraphics = [];
+}
+
 function refreshIndicatorPosition() {
   base_grid_x = null;
   base_grid_y = null;
@@ -133,7 +132,7 @@ function rebuildIfSelectMoving() {
   }
 }
 
-function moveMasksToOffset(lastGridDeltaX, lastGridDeltaY) {
+function moveMasksToOffset(last_delta_x, last_delta_y) {
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
@@ -141,8 +140,17 @@ function moveMasksToOffset(lastGridDeltaX, lastGridDeltaY) {
   const pixelDeltaY = now_pixel_y - base_pixel_y;
   const gridDeltaX = Math.round(pixelDeltaX / cellWidth);
   const gridDeltaY = Math.round(pixelDeltaY / cellHeight);
-
-  if (gridDeltaX === lastGridDeltaX && gridDeltaY === lastGridDeltaY) return;
+  // 检查是否为有效移动，避免原位置重绘的大量开支
+  if (
+    last_delta_x != null &&
+    Math.abs(gridDeltaX - last_delta_x) < 1 &&
+    Math.abs(gridDeltaY - last_delta_y) < 1
+  ) {
+    return {
+      gridDeltaX: last_delta_x,
+      gridDeltaY: last_delta_y,
+    };
+  }
 
   const moveKind = (kind, meta) => {
     Object.keys(selectGraphics[kind]).forEach((id) => {
@@ -155,13 +163,57 @@ function moveMasksToOffset(lastGridDeltaX, lastGridDeltaY) {
   moveKind("machines", metaRotateMove.machines);
   moveKind("belts", metaRotateMove.belts);
   moveKind("pipes", metaRotateMove.pipes);
-  lastGridDeltaX = gridDeltaX;
-  lastGridDeltaY = gridDeltaY;
-};
+  generateConflictMask(
+    detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY),
+  );
+  return {
+    gridDeltaX,
+    gridDeltaY,
+  };
+}
+
+function setSelectBaseCenterPixel(metaBackup, storageStore) {
+  let max_x = -Infinity;
+  let max_y = -Infinity;
+  let min_x = Infinity;
+  let min_y = Infinity;
+  const cellHeight = storageStore.cellHeight;
+  const cellWidth = storageStore.cellWidth;
+  Object.values(metaBackup.machines).forEach((m) => {
+    max_x = Math.max(max_x, m.centerX + cellWidth * m.gridWidth * 0.5);
+    max_y = Math.max(max_y, m.centerY + cellHeight * m.gridHeight * 0.5);
+    min_x = Math.min(min_x, m.centerX - cellWidth * m.gridWidth * 0.5);
+    min_y = Math.min(min_y, m.centerY - cellHeight * m.gridHeight * 0.5);
+  });
+  Object.values(metaBackup.belts).forEach((b) => {
+    max_x = Math.max(max_x, b.x + cellWidth * 0.5);
+    max_y = Math.max(max_y, b.y + cellHeight * 0.5);
+    min_x = Math.min(min_x, b.x - cellWidth * 0.5);
+    min_y = Math.min(min_y, b.y - cellHeight * 0.5);
+  });
+  Object.values(metaBackup.pipes).forEach((p) => {
+    max_x = Math.max(max_x, p.x + cellWidth * 0.5);
+    max_y = Math.max(max_y, p.y + cellHeight * 0.5);
+    min_x = Math.min(min_x, p.x - cellWidth * 0.5);
+    min_y = Math.min(min_y, p.y - cellHeight * 0.5);
+  });
+  const { gridX, gridY } = pixelToGridNoneOffset(
+    (max_x + min_x) / 2,
+    (max_y + min_y) / 2,
+  );
+  console.log(gridX, gridY);
+  base_pixel_x = gridX * cellWidth;
+  base_pixel_y = gridY * cellHeight;
+}
+
+function generateConflictMask(metaConflict) {
+  refreshConflictIndicator();
+  conflictGraphics = drawConflictMaskOnMove(metaConflict);
+}
 
 function onStartPlaceBelt(name) {
   onCancel();
-
+  placeIndicator.visible = true;
   const onmousedown = (event) => {
     base_grid_x = event.gridX;
     base_grid_y = event.gridY;
@@ -267,6 +319,17 @@ function onStartSelect(name) {
 function onStartSelectMove(name) {
   refreshHandleQueue();
   refreshIndicatorPosition();
+  refreshConflictIndicator();
+
+  const { machines, belts, pipes } = selectGraphics;
+  if (
+    Object.keys(machines).length == 0 &&
+    Object.keys(belts).length == 0 &&
+    Object.keys(pipes).length == 0
+  ) {
+    return;
+  }
+
   isSelectMoving = true;
   metaBackup = { machines: {}, belts: {}, pipes: {} };
   metaRotateMove = { machines: {}, belts: {}, pipes: {} };
@@ -289,36 +352,23 @@ function onStartSelectMove(name) {
     metaRotateMove.pipes[id] = { ...storageStore.pipes[id] };
   });
   // 计算选中实体的中心 pixel 作为基准
-  const allPositions = [];
-  Object.values(metaBackup.machines).forEach((m) =>
-    allPositions.push({ x: m.centerX, y: m.centerY }),
-  );
-  Object.values(metaBackup.belts).forEach((b) =>
-    allPositions.push({ x: b.x, y: b.y }),
-  );
-  Object.values(metaBackup.pipes).forEach((p) =>
-    allPositions.push({ x: p.x, y: p.y }),
-  );
-
-  if (allPositions.length === 0) {
-    isSelectMoving = false;
-    return;
-  }
-  base_pixel_x = allPositions.reduce((s, p) => s + p.x, 0) / allPositions.length;
-  base_pixel_y = allPositions.reduce((s, p) => s + p.y, 0) / allPositions.length;
-
+  setSelectBaseCenterPixel(metaBackup, storageStore);
   // Step 2: 删除原始实体（清 storage + 拆 Container）
   Object.values(metaBackup.machines).forEach((m) => deleteMachine(m));
   Object.values(metaBackup.belts).forEach((b) => deleteBelt(b));
   Object.values(metaBackup.pipes).forEach((p) => deletePipe(p));
-
   // Step 3: 鼠标事件 — mousemove 实时偏移，mousedown 确认放置
+  let last_delta_x = 0,
+    last_delta_y = 0;
   const onmousemove = (event) => {
-    let lastGridDeltaX = 0;
-    let lastGridDeltaY = 0;
     now_pixel_x = event.client.x;
     now_pixel_y = event.client.y;
-    moveMasksToOffset(lastGridDeltaX, lastGridDeltaY);
+    const { gridDeltaX, gridDeltaY } = moveMasksToOffset(
+      last_delta_x,
+      last_delta_y,
+    );
+    last_delta_x = gridDeltaX;
+    last_delta_y = gridDeltaY;
   };
 
   const onmousedown = (event) => {
@@ -326,7 +376,11 @@ function onStartSelectMove(name) {
     const pixelDeltaY = event.client.y - base_pixel_y;
     const gridDeltaX = Math.round(pixelDeltaX / cellWidth);
     const gridDeltaY = Math.round(pixelDeltaY / cellHeight);
-
+    // 检查是否冲突
+    if (conflictGraphics.length > 0) {
+      console.log("PLACE CONFLICT");
+      return;
+    }
     // Step 4: 放置到最终位置
     Object.keys(selectGraphics.machines).forEach((id) => {
       const m = metaRotateMove.machines[id];
@@ -389,6 +443,7 @@ function onStartSelectDelete() {}
 function onCancel() {
   refreshIndicator();
   refreshSelectIndicator();
+  refreshConflictIndicator();
   refreshIndicatorPosition();
   refreshHandleQueue();
   rebuildIfSelectMoving();
