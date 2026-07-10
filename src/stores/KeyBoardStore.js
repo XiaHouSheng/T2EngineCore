@@ -8,6 +8,7 @@ import {
   onStartSelectRotate,
   onStartSelectDelete,
   onStartPlaceChangeMode,
+  onStartSelectCopy,
   onCancel,
   proxyForHandle,
 } from "../core_sub/Indicator.js";
@@ -22,6 +23,7 @@ export const useCommandStore = defineStore("command", () => {
     m: "MOVE",
     r: "ROTATE",
     f: "DELETE",
+    copy: "COPY",
   });
   const keyboard_base_command = markRaw({
     e: "PLACE_BELT",
@@ -33,6 +35,7 @@ export const useCommandStore = defineStore("command", () => {
     m: "MOVE",
     r: "ROTATE",
     f: "DELETE",
+    copy: "COPY",
   })
   const command_handle = markRaw({
     // 单命令
@@ -46,6 +49,7 @@ export const useCommandStore = defineStore("command", () => {
     SELECT_MOVE: onStartSelectMove,
     SELECT_ROTATE: onStartSelectRotate,
     SELECT_DELETE: onStartSelectDelete,
+    SELECT_COPY: onStartSelectCopy,
   });
 
   // 代理命令处理函数

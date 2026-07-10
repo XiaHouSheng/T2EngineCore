@@ -27,7 +27,9 @@ function createBelt(typename) {
   return belt;
 }
 
-function placeBelt(belt, x, y, in_dir, out_dir) {
+function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
+  // 如果是复制操作，生成新的 id
+  if (is_copy) belt.id = nanoid();
   belt.gridX = x;
   belt.gridY = y;
   belt.in = in_dir;
@@ -67,11 +69,11 @@ function placeBatchBelt(
   start_position,
   end_position,
   start_belt_dir_in = null,
+  end_belt_dir_out = null,
   change_mode = true,
 ) {
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
-
   if (startX === endX && startY === endY) {
     return;
   }
@@ -89,7 +91,7 @@ function placeBatchBelt(
         direction_out,
       );
     }
-    return;
+    return direction_out;
   }
   if (startY === endY) {
     const delta_num = startX - endX;
@@ -105,14 +107,16 @@ function placeBatchBelt(
         direction_out,
       );
     }
-    return;
+    return direction_out;
   }
+
 
   const crossX = change_mode ? startX : endX;
   const crossY = change_mode ? endY : startY;
+  //false -> endX, startY | startX, startY
   let delta_num, direction_in, direction_out;
   //start -> cross
-  delta_num = change_mode ? startY - crossY : startX - crossX;
+  delta_num = change_mode ? startY - crossY : crossX - startX;
   direction_in = change_mode
     ? delta_num > 0
       ? "up"
@@ -142,7 +146,14 @@ function placeBatchBelt(
         break;
     }
     if (i === 0 && start_belt_dir_in) {
-      direction_in = start_belt_dir_in;
+      placeBelt(
+        createBelt("default"),
+        next_x,
+        next_y,
+        start_belt_dir_in,
+        direction_in,
+      );
+      continue;
     }
     placeBelt(
       createBelt("default"),
@@ -184,6 +195,15 @@ function placeBatchBelt(
         next_y = crossY;
         break;
     }
+    if (i === Math.abs(delta_num) && end_belt_dir_out) {
+      placeBelt(
+        createBelt("default"),
+        next_x,
+        next_y,
+        direction_out,
+        end_belt_dir_out,
+      );
+    }
     placeBelt(
       createBelt("default"),
       next_x,
@@ -192,6 +212,8 @@ function placeBatchBelt(
       direction_out,
     );
   }
+  console.log("place batch belt end")
+  return end_belt_dir_out || direction_out;
 }
 
 function deleteBatchBelt(belt) {

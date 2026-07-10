@@ -3,12 +3,12 @@ import { ref, computed, markRaw } from "vue";
 
 export const useStorageStore = defineStore("StorageStore", () => {
   // 场景配置
-  const width = ref(600);
-  const height = ref(600);
+  const width = ref(800);
+  const height = ref(800);
   const scale = ref(1);
   const backgroundColor = ref(0xffffff);
-  const rowCount = ref(10);
-  const colCount = ref(10);
+  const rowCount = ref(20);
+  const colCount = ref(20);
   const cellWidth = computed(() => width.value / colCount.value);
   const cellHeight = computed(() => height.value / rowCount.value);
 

@@ -4,8 +4,18 @@ import {
   placeMachine,
   rotateMachineByCenter,
 } from "./Machine.js";
-import { deleteBelt, placeBelt, rotateBeltByCenter } from "./Belt.js";
-import { deletePipe, placePipe, rotatePipeByCenter } from "./Pipe.js";
+import {
+  deleteBelt,
+  placeBelt,
+  rotateBeltByCenter,
+  placeBatchBelt,
+} from "./Belt.js";
+import {
+  deletePipe,
+  placePipe,
+  rotatePipeByCenter,
+  placeBatchPipe,
+} from "./Pipe.js";
 import {
   drawMask,
   drawSelectBox,
@@ -16,11 +26,16 @@ import {
   drawPipeMask,
   drawConflictMaskOnMove,
 } from "../core_stage/IndicatorStage.js";
-import { detectOnMoveMask } from "../core_middleware/ConflictDetect.js";
+import {
+  detectOnMoveMask,
+  detectOnPlaceBatch,
+} from "../core_middleware/ConflictDetect.js";
 import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
+import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore.js";
 
 let pipeOrBeltMode = true;
 let isSelectMoving = false;
+let nowPlaceIsBelt = true;
 
 let placeIndicator = null;
 let selectIndicator = null;
@@ -211,10 +226,38 @@ function generateConflictMask(metaConflict) {
   conflictGraphics = drawConflictMaskOnMove(metaConflict);
 }
 
-function onStartPlaceBelt(name) {
+function onStartPlace(name) {
   onCancel();
   placeIndicator.visible = true;
+  let final_direction = null;
   const onmousedown = (event) => {
+    const storageStore = useStorageStore();
+    console.log(storageStore.conveyorLocations)
+    if (conflictGraphics.length > 1 && final_direction != null) {
+      return;
+    }
+    if (base_grid_x == null || base_grid_y == null) {
+      base_grid_x = event.gridX;
+      base_grid_y = event.gridY;
+      return;
+    }
+    if (nowPlaceIsBelt) {
+      final_direction = placeBatchBelt(
+        { startX: base_grid_x, startY: base_grid_y },
+        { endX: now_grid_x, endY: now_grid_y },
+        final_direction,
+        undefined,
+        pipeOrBeltMode,
+      );
+    }else {
+      final_direction = placeBatchPipe(
+        { startX: base_grid_x, startY: base_grid_y },
+        { endX: now_grid_x, endY: now_grid_y },
+        final_direction,
+        undefined,
+        pipeOrBeltMode,
+      );
+    }
     base_grid_x = event.gridX;
     base_grid_y = event.gridY;
   };
@@ -234,6 +277,7 @@ function onStartPlaceBelt(name) {
       },
       pipeOrBeltMode,
     );
+    generateConflictMask(detectOnPlaceBatch(indicatorGraphics, nowPlaceIsBelt));
   };
   if (!queue.mousedown[name]) {
     queue.mousedown[name] = onmousedown;
@@ -243,9 +287,18 @@ function onStartPlaceBelt(name) {
   }
 }
 
+function onStartPlaceBelt(name) {
+  onCancel();
+  placeIndicator.visible = true;
+  nowPlaceIsBelt = true;
+  onStartPlace();
+}
+
 function onStartPlacePipe() {
   onCancel();
   placeIndicator.visible = true;
+  nowPlaceIsBelt = false;
+  onStartPlace();
 }
 
 function onStartPlaceChangeMode() {
@@ -262,12 +315,15 @@ function onStartPlaceChangeMode() {
     },
     pipeOrBeltMode,
   );
+  generateConflictMask(detectOnPlaceBatch(indicatorGraphics, nowPlaceIsBelt));
 }
 
 function onStartSelect(name) {
   onCancel();
   let start_select = false;
   let set = new Set();
+
+  const storageStore = useStorageStore();
 
   const onmousedown = (event) => {
     base_pixel_x = event.client.x;
@@ -303,6 +359,22 @@ function onStartSelect(name) {
         ...masks[key],
       };
     });
+
+    // StorageStore 备份选中的 meta 数据
+    metaBackup = { machines: {}, belts: {}, pipes: {} };
+    metaRotateMove = { machines: {}, belts: {}, pipes: {} };
+    Object.keys(selectGraphics.machines).forEach((id) => {
+      metaBackup.machines[id] = { ...storageStore.machines[id] };
+      metaRotateMove.machines[id] = { ...storageStore.machines[id] };
+    });
+    Object.keys(selectGraphics.belts).forEach((id) => {
+      metaBackup.belts[id] = { ...storageStore.conveyors[id] };
+      metaRotateMove.belts[id] = { ...storageStore.conveyors[id] };
+    });
+    Object.keys(selectGraphics.pipes).forEach((id) => {
+      metaBackup.pipes[id] = { ...storageStore.pipes[id] };
+      metaRotateMove.pipes[id] = { ...storageStore.pipes[id] };
+    });
   };
 
   if (!queue.mousedown[name]) {
@@ -316,7 +388,7 @@ function onStartSelect(name) {
   }
 }
 
-function onStartSelectMove(name) {
+function onStartSelectMove(name, is_copy = false) {
   refreshHandleQueue();
   refreshIndicatorPosition();
   refreshConflictIndicator();
@@ -331,32 +403,20 @@ function onStartSelectMove(name) {
   }
 
   isSelectMoving = true;
-  metaBackup = { machines: {}, belts: {}, pipes: {} };
-  metaRotateMove = { machines: {}, belts: {}, pipes: {} };
 
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
 
-  // Step 1: 从 StorageStore 备份选中的 meta 数据
-  Object.keys(selectGraphics.machines).forEach((id) => {
-    metaBackup.machines[id] = { ...storageStore.machines[id] };
-    metaRotateMove.machines[id] = { ...storageStore.machines[id] };
-  });
-  Object.keys(selectGraphics.belts).forEach((id) => {
-    metaBackup.belts[id] = { ...storageStore.conveyors[id] };
-    metaRotateMove.belts[id] = { ...storageStore.conveyors[id] };
-  });
-  Object.keys(selectGraphics.pipes).forEach((id) => {
-    metaBackup.pipes[id] = { ...storageStore.pipes[id] };
-    metaRotateMove.pipes[id] = { ...storageStore.pipes[id] };
-  });
   // 计算选中实体的中心 pixel 作为基准
   setSelectBaseCenterPixel(metaBackup, storageStore);
   // Step 2: 删除原始实体（清 storage + 拆 Container）
-  Object.values(metaBackup.machines).forEach((m) => deleteMachine(m));
-  Object.values(metaBackup.belts).forEach((b) => deleteBelt(b));
-  Object.values(metaBackup.pipes).forEach((p) => deletePipe(p));
+  // 如果是复制操作，不删除原始实体
+  if (!is_copy) {
+    Object.values(metaBackup.machines).forEach((m) => deleteMachine(m));
+    Object.values(metaBackup.belts).forEach((b) => deleteBelt(b));
+    Object.values(metaBackup.pipes).forEach((p) => deletePipe(p));
+  }
   // Step 3: 鼠标事件 — mousemove 实时偏移，mousedown 确认放置
   let last_delta_x = 0,
     last_delta_y = 0;
@@ -384,15 +444,29 @@ function onStartSelectMove(name) {
     // Step 4: 放置到最终位置
     Object.keys(selectGraphics.machines).forEach((id) => {
       const m = metaRotateMove.machines[id];
-      placeMachine(m, m.gridX + gridDeltaX, m.gridY + gridDeltaY);
+      placeMachine(m, m.gridX + gridDeltaX, m.gridY + gridDeltaY, is_copy);
     });
     Object.keys(selectGraphics.belts).forEach((id) => {
       const b = metaRotateMove.belts[id];
-      placeBelt(b, b.gridX + gridDeltaX, b.gridY + gridDeltaY, b.in, b.out);
+      placeBelt(
+        b,
+        b.gridX + gridDeltaX,
+        b.gridY + gridDeltaY,
+        b.in,
+        b.out,
+        is_copy,
+      );
     });
     Object.keys(selectGraphics.pipes).forEach((id) => {
       const p = metaRotateMove.pipes[id];
-      placePipe(p, p.gridX + gridDeltaX, p.gridY + gridDeltaY, p.in, p.out);
+      placePipe(
+        p,
+        p.gridX + gridDeltaX,
+        p.gridY + gridDeltaY,
+        p.in,
+        p.out,
+        is_copy,
+      );
     });
     isSelectMoving = false;
     onCancel();
@@ -438,7 +512,16 @@ function onStartSelectRotate(name) {
   moveMasksToOffset();
 }
 
-function onStartSelectDelete() {}
+function onStartSelectCopy(name) {
+  onStartSelectMove(name, true);
+}
+
+function onStartSelectDelete() {
+  Object.values(metaBackup.machines).forEach((m) => deleteMachine(m));
+  Object.values(metaBackup.belts).forEach((b) => deleteBelt(b));
+  Object.values(metaBackup.pipes).forEach((p) => deletePipe(p));
+  onCancel();
+}
 
 function onCancel() {
   refreshIndicator();
@@ -448,6 +531,9 @@ function onCancel() {
   refreshHandleQueue();
   rebuildIfSelectMoving();
   placeIndicator.visible = false;
+  const commandStore = useCommandStore();
+  commandStore.last_command = CMD_DEFAULT;
+  commandStore.select_command = CMD_DEFAULT;
 }
 
 function onMouseMove(event) {
@@ -472,6 +558,7 @@ export {
   onStartSelectRotate,
   onStartSelectDelete,
   onStartPlaceChangeMode,
+  onStartSelectCopy,
 };
 export { onMouseMove, onMouseDown, onMouseUp };
 export { proxyForHandle };

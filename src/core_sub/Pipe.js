@@ -23,7 +23,9 @@ function createPipe(typename) {
   return pipe;
 }
 
-function placePipe(pipe, x, y, in_dir, out_dir) {
+function placePipe(pipe, x, y, in_dir, out_dir, is_copy = false) {
+  // 如果是复制操作，生成新的 id
+  if (is_copy) pipe.id = nanoid();
   pipe.gridX = x;
   pipe.gridY = y;
   pipe.in = in_dir;

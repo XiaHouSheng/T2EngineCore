@@ -14,6 +14,8 @@ class IndicatorGraphic extends Graphics {
     const { gridWidth, gridHeight } = size;
     this.cellHeight = cellSize.height;
     this.cellWidth = cellSize.width;
+    this.gridX = gridX;
+    this.gridY = gridY;
     this.pivot.x = pivot.x * this.cellWidth * gridWidth;
     this.pivot.y = pivot.y * this.cellHeight * gridHeight;
     this.rect(0, 0,

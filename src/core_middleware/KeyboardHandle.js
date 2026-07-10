@@ -10,9 +10,14 @@ function handleKeyboard(keyboardEvent) {
   if (!commandStore) commandStore = useCommandStore();
   const key = keyboardEvent.key.toLowerCase();
 
-  const command = commandStore.keyboard_command[key];
-  const sub_command = commandStore.keyboard_sub_command[key];
-  const base_command = commandStore.keyboard_base_command[key];
+  let command = commandStore.keyboard_command[key];
+  let sub_command = commandStore.keyboard_sub_command[key];
+  let base_command = commandStore.keyboard_base_command[key];
+
+  if (keyboardEvent.ctrlKey && key === "c") {
+    command = commandStore.keyboard_command["copy"];
+    sub_command = commandStore.keyboard_sub_command["copy"];
+  }
 
   // 上一条命令 | 用于子命令的存储
   const last_command = commandStore.last_command;
@@ -48,6 +53,7 @@ function handleKeyboard(keyboardEvent) {
     commandStore.select_command = command;
     commandStore.last_command = commandStore.CMD_DEFAULT;
   }
+
   // 子命令直接执行
   if (sub_command) {
     const func = commandStore.command_handle[`${select_command}_${command}`];

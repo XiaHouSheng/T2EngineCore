@@ -45,7 +45,9 @@ function createMachine(typename) {
 }
 
 // 注入position
-function placeMachine(machine, x, y) {
+function placeMachine(machine, x, y, is_copy = false) {
+  // 如果是复制操作，生成新的 id
+  if (is_copy) machine.id = nanoid();
   machine.gridX = x;
   machine.gridY = y;
   detectOnPlaceMachine(machine);
