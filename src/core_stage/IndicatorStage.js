@@ -1,6 +1,7 @@
 import { indicatorContainer } from "./SimStage";
 import { IndicatorGraphic } from "../core_graphic/IndicatorGraphic.js";
 import { SelectGraphic } from "../core_graphic/SelectGraphic.js";
+import { HoverGraphic } from "../core_graphic/hoverGraphic.js";
 import { scanGridByPixel } from "../core_middleware/GridRegistry.js";
 
 //一个Cube的遮罩指示
@@ -11,7 +12,7 @@ function drawMask(position, conflict = false) {
 }
 
 //指定长宽的遮罩指示
-function drawSpecialMask(position, size, pivot, is_conflict = false) {
+function  drawSpecialMask(position, size, pivot, is_conflict = false) {
   const mask = new IndicatorGraphic(position, size, pivot, is_conflict);
   indicatorContainer.addChild(mask);
   return mask;
@@ -193,6 +194,17 @@ function drawConflictMaskOnMove(metaConflict) {
   return conflictGraphics;
 }
 
+// 画机器的port指示器
+function drawHoverIndicator(entity) {
+  const indicator = new HoverGraphic(
+    { gridX: entity.gridX, gridY: entity.gridY },
+    { gridWidth: entity.gridWidth || 1, gridHeight: entity.gridHeight || 1 },
+    entity.anchor?.[entity.rotation] || { x: 0.5, y: 0.5 },
+  );
+  indicatorContainer.addChild(indicator);
+  return indicator;
+}
+
 export {
   drawMask,
   drawSelectBox,
@@ -204,4 +216,5 @@ export {
   drawMaskFromPosition,
   drawMaskSelectArea,
   drawConflictMaskOnMove,
+  drawHoverIndicator,
 };

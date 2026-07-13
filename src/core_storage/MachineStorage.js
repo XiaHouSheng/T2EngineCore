@@ -31,7 +31,7 @@ function getMachinePixelSize(machine) {
   };
 }
 
-// 获取机器左上角像素坐标（根据中心坐标）
+// 获取机器左上角像素坐标（根据中心坐标）仅移动时候使用
 function getLeftTopPositionByCenter(machine) {
   // machine.centerX, machine.centerY -> machine.leftTopX, machine.leftTopY
   const { machineWidth, machineHeight } = getMachinePixelSize(machine);
@@ -94,6 +94,20 @@ function getMachineByPosition(grid_x, grid_y) {
   return storageStore.machines[machine_type.split(".")[0]];
 }
 
+// 根据网格坐标获取指定机器的当前格类型
+function getMachineMaskTypeByPosition(grid_x, grid_y) {
+  const machine = getMachineByPosition(grid_x, grid_y);
+  if (machine == null) return;
+  const { leftTopX, leftTopY } = getLeftTopPositionByCenter(machine);
+  const { gridX: leftTopGridX, gridY: leftTopGridY } = pixelToGridNoneOffset(
+    leftTopX,
+    leftTopY,
+  );
+  const positionX = grid_x - leftTopGridX;
+  const positionY = grid_y - leftTopGridY;
+  return machine.mask[positionY][positionX];
+}
+
 // 保存机器
 function saveMachine(machine, machine_container) {
   const storageStore = useStorageStore();
@@ -128,5 +142,6 @@ export {
   dropMachine,
   getMachineByPosition,
   getMachineGridPosition,
+  getMachineMaskTypeByPosition,
   mapMachineArea,
 };

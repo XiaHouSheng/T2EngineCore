@@ -2,6 +2,7 @@ import { useStorageStore } from "../stores/StorageStore.js";
 import {
   mapMachineArea,
   getMachineByPosition,
+  getMachineMaskTypeByPosition,
 } from "../core_storage/MachineStorage.js";
 import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { getPipeByPosition } from "../core_storage/PipeStorage.js";
@@ -80,6 +81,31 @@ function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
   return metaConflict;
 }
 
+function detectOnHoverMachine(gridX, gridY) {
+  const machine = getMachineByPosition(gridX, gridY);
+  if (machine) {
+    return machine;
+  }
+  return null;
+}
+
+function detectOnHoverBelt(gridX, gridY) {
+  const belt = getBeltByPosition(gridX, gridY);
+  if (belt) {
+    return belt;
+  }
+  return null;
+}
+function detectOnHoverPipe(gridX, gridY) {
+  const pipe = getPipeByPosition(gridX, gridY);
+  if (pipe) {
+    return pipe;
+  }
+  return null;
+}
+
+
+
 function detectOnPlaceBatch(indicatorGraphics, is_belt = true) {
   const metaConflict = {
     machines: {},
@@ -100,7 +126,11 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true) {
       graphic.gridY,
     );
     if (machine) {
-      metaConflict.machines[machine.id] = machine;
+      const maskType = getMachineMaskTypeByPosition(graphic.gridX, graphic.gridY);
+      const allowedPorts = is_belt ? ["bo", "bi"] : ["po", "pi"];
+      if (!allowedPorts.includes(maskType)) {
+        metaConflict.machines[machine.id] = machine;
+      }
     }
     if (belt_ && is_belt) {
       metaConflict.belts[belt_.id] = belt_;
@@ -118,4 +148,7 @@ export {
   detectOnPlaceBelt,
   detectOnMoveMask,
   detectOnPlaceBatch,
+  detectOnHoverMachine,
+  detectOnHoverBelt,
+  detectOnHoverPipe,
 };

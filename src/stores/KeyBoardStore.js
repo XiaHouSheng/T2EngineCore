@@ -10,8 +10,8 @@ import {
   onStartPlaceChangeMode,
   onStartSelectCopy,
   onCancel,
-  proxyForHandle,
 } from "../core_sub/Indicator.js";
+import { proxyForHandle } from "../core_middleware/IndicatorUtil.js";
 export const useCommandStore = defineStore("command", () => {
   const select_command = ref("default");
   const last_command = ref("default");

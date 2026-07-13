@@ -1,7 +1,12 @@
 import { nanoid } from "nanoid";
 import { usePipeStore } from "../stores/PipeStore";
 import { drawPipe, dropDrawPipe } from "../core_stage/PipeStage.js";
-import { savePipe, dropPipe, findPipeNearBy } from "../core_storage/PipeStorage.js";
+import {
+  savePipe,
+  dropPipe,
+  findPipeNearBy,
+  getPipeByPosition,
+} from "../core_storage/PipeStorage.js";
 import { detectOnPlacePipe } from "../core_middleware/ConflictDetect.js";
 import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 /**
@@ -61,14 +66,111 @@ function deletePipe(pipe) {
   return pipe;
 }
 
-function placeBatchPipe(start_position, end_position, change_mode = true) {
+function placeBatchPipe(
+  start_position,
+  end_position,
+  start_pipe_dir_in = null,
+  end_pipe_dir_out = null,
+  change_mode = true,
+) {
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
+  if (startX === endX && startY === endY) {
+    if (end_pipe_dir_out == null || start_pipe_dir_in == null) return;
+    const pipe = getPipeByPosition(startX, startY);
+    if (pipe) deletePipe(pipe);
+    placePipe(
+      createPipe("default"),
+      startX,
+      startY,
+      start_pipe_dir_in,
+      end_pipe_dir_out,
+    );
+    return end_pipe_dir_out;
+  }
+  if (startX === endX) {
+    const delta_num = startY - endY;
+    const direction_out = delta_num > 0 ? "up" : "down";
+    const direction_in = direction_out;
+    for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
+      let pre_i = delta_num > 0 ? -i : i;
+      if (i == 0) {
+        const pipe = getPipeByPosition(startX, startY);
+        if (pipe) deletePipe(pipe);
+        placePipe(
+          createPipe("default"),
+          startX,
+          startY + pre_i,
+          start_pipe_dir_in || direction_out,
+          direction_out,
+        );
+        continue;
+      }
+      if (i == Math.abs(delta_num)) {
+        placePipe(
+          createPipe("default"),
+          startX,
+          startY + pre_i,
+          direction_out,
+          end_pipe_dir_out || direction_out,
+        );
+        continue;
+      }
+      placePipe(
+        createPipe("default"),
+        startX,
+        startY + pre_i,
+        direction_in,
+        direction_out,
+      );
+    }
+    return direction_out;
+  }
+  if (startY === endY) {
+    const delta_num = startX - endX;
+    const direction_out = delta_num > 0 ? "left" : "right";
+    const direction_in = direction_out;
+    for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
+      let pre_i = delta_num > 0 ? -i : i;
+      if (i == 0) {
+        const pipe = getPipeByPosition(startX, startY);
+        if (pipe) deletePipe(pipe);
+        placePipe(
+          createPipe("default"),
+          startX + pre_i,
+          startY,
+          start_pipe_dir_in || direction_out,
+          direction_out,
+        );
+        continue;
+      }
+      if (i == Math.abs(delta_num)) {
+        placePipe(
+          createPipe("default"),
+          startX + pre_i,
+          startY,
+          direction_out,
+          end_pipe_dir_out || direction_out,
+        );
+        continue;
+      }
+      placePipe(
+        createPipe("default"),
+        startX + pre_i,
+        startY,
+        direction_in,
+        direction_out,
+      );
+    }
+    return direction_out;
+  }
+
   const crossX = change_mode ? startX : endX;
   const crossY = change_mode ? endY : startY;
+  //false -> endX, startY | startX, startY
   let delta_num, direction_in, direction_out;
   //start -> cross
-  delta_num = change_mode ? startY - crossY : startX - crossX;
+  delta_num = change_mode ? startY - crossY : crossX - startX;
   direction_in = change_mode
     ? delta_num > 0
       ? "up"
@@ -96,6 +198,18 @@ function placeBatchPipe(start_position, end_position, change_mode = true) {
         next_x = startX - i;
         next_y = startY;
         break;
+    }
+    if (i === 0 && start_pipe_dir_in) {
+      const pipe = getPipeByPosition(startX, startY);
+      if (pipe) deletePipe(pipe);
+      placePipe(
+        createPipe("default"),
+        next_x,
+        next_y,
+        start_pipe_dir_in,
+        direction_in,
+      );
+      continue;
     }
     placePipe(
       createPipe("default"),
@@ -137,6 +251,16 @@ function placeBatchPipe(start_position, end_position, change_mode = true) {
         next_y = crossY;
         break;
     }
+    if (end_pipe_dir_out && i === Math.abs(delta_num)) {
+      placePipe(
+        createPipe("default"),
+        next_x,
+        next_y,
+        direction_out,
+        end_pipe_dir_out,
+      );
+      continue;
+    }
     placePipe(
       createPipe("default"),
       next_x,
@@ -145,14 +269,23 @@ function placeBatchPipe(start_position, end_position, change_mode = true) {
       direction_out,
     );
   }
+  return end_pipe_dir_out || direction_out;
 }
 
 function deleteBatchPipe(pipe) {
-    const pipes = findPipeNearBy(pipe);
-    for (let i = 0; i < pipes.length; i++) {
-        deletePipe(pipes[i]);
-    }
-    return pipes;
+  const pipes = findPipeNearBy(pipe);
+  for (let i = 0; i < pipes.length; i++) {
+    deletePipe(pipes[i]);
+  }
+  return pipes;
 }
 
-export { createPipe, placePipe, rotatePipe, rotatePipeByCenter, deletePipe, placeBatchPipe, deleteBatchPipe, };
+export {
+  createPipe,
+  placePipe,
+  rotatePipe,
+  rotatePipeByCenter,
+  deletePipe,
+  placeBatchPipe,
+  deleteBatchPipe,
+};

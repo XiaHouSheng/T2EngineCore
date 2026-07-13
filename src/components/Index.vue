@@ -26,6 +26,7 @@ import {
   findBeltNearBy,
   getBeltByPosition,
 } from "../core_storage/BeltStorage.js";
+import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
 const storageStore = useStorageStore();
 const canvas = ref(null);
 
@@ -47,9 +48,9 @@ onMounted(() => {
   const machine = createMachine("testType4");
   const rotate_machine = rotateMachine(machine);
   placeMachine(rotate_machine, 4, 4);
-  placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
-  const choose_belt = getBeltByPosition(7, 8);
-  const belts = findBeltNearBy(choose_belt);
+  //placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
+  //const choose_belt = getBeltByPosition(7, 8);
+  //const belts = findBeltNearBy(choose_belt);
   /*
   drawSpecialMask(
     {gridX: 4, gridY: 4},

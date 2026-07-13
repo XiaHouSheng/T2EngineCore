@@ -17,305 +17,165 @@ import {
   placeBatchPipe,
 } from "./Pipe.js";
 import {
-  drawMask,
-  drawSelectBox,
   drawMaskFromPosition,
   drawMaskSelectArea,
   drawMachineMask,
   drawBeltMask,
   drawPipeMask,
-  drawConflictMaskOnMove,
 } from "../core_stage/IndicatorStage.js";
 import {
-  detectOnMoveMask,
   detectOnPlaceBatch,
 } from "../core_middleware/ConflictDetect.js";
-import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
+import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
 import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore.js";
+import { scanAdjacentPort } from "../core_middleware/IndicatorUtil.js";
+import { S, initIndicator, placeIndicatorHandle, refreshIndicator, refreshSelectIndicator, refreshConflictIndicator, refreshIndicatorPosition, refreshHandleQueue, rebuildIfSelectMoving, moveMasksToOffset, setSelectBaseCenterPixel, generateConflictMask } from "../core_middleware/IndicatorState.js";
 
-let pipeOrBeltMode = true;
-let isSelectMoving = false;
-let nowPlaceIsBelt = true;
-
-let placeIndicator = null;
-let selectIndicator = null;
-
-let indicatorGraphics = [];
-let conflictGraphics = [];
-
-let selectGraphics = {
-  machines: {},
-  belts: {},
-  pipes: {},
-};
-let metaBackup = { machines: {}, belts: {}, pipes: {} };
-let metaRotateMove = { machines: {}, belts: {}, pipes: {} };
-
-let base_grid_x = null,
-  base_grid_y = null,
-  now_grid_x = null,
-  now_grid_y = null;
-let base_pixel_x = null,
-  base_pixel_y = null,
-  now_pixel_x = null,
-  now_pixel_y = null;
-
-const queue = {
-  mousedown: {},
-  mouseup: {},
-  mousemove: {},
-};
-
-function initIndicator() {
-  placeIndicator = drawMask({ gridX: 1, gridY: 1 });
-  placeIndicator.visible = false;
-  selectIndicator = drawSelectBox();
-  selectIndicator.visible = false;
-}
-
-function placeIndicatorHandle(event) {
-  placeIndicator.moveToGrid({ gridX: event.gridX, gridY: event.gridY });
-}
-
-function proxyForHandle(func, name) {
-  let lastCall = 0;
-  return function () {
-    const now = Date.now();
-    if (now - lastCall < 300) return;
-    lastCall = now;
-    func(name.toLowerCase());
-    console.log(name);
-  };
-}
-
-function refreshIndicator() {
-  if (indicatorGraphics.length == 0) return;
-  indicatorGraphics.forEach((item) => item.destroy());
-  indicatorGraphics = [];
-}
-
-function refreshSelectIndicator() {
-  Object.values(selectGraphics).forEach((kind) => {
-    Object.values(kind).forEach((item) => item.destroy());
-  });
-  selectGraphics = {
-    machines: {},
-    belts: {},
-    pipes: {},
-  };
-  selectIndicator.visible = false;
-}
-
-function refreshConflictIndicator() {
-  if (conflictGraphics.length == 0) return;
-  conflictGraphics.forEach((item) => item.destroy());
-  conflictGraphics = [];
-}
-
-function refreshIndicatorPosition() {
-  base_grid_x = null;
-  base_grid_y = null;
-  now_grid_x = null;
-  now_grid_y = null;
-  base_pixel_x = null;
-  base_pixel_y = null;
-  now_pixel_x = null;
-  now_pixel_y = null;
-}
-
-function refreshHandleQueue() {
-  queue.mousedown = {};
-  queue.mouseup = {};
-  queue.mousemove = {};
-}
-
-function rebuildIfSelectMoving() {
-  if (isSelectMoving) {
-    Object.keys(metaBackup.machines).forEach((id) => {
-      const m = metaBackup.machines[id];
-      placeMachine(m, m.gridX, m.gridY);
-    });
-    Object.keys(metaBackup.belts).forEach((id) => {
-      const b = metaBackup.belts[id];
-      placeBelt(b, b.gridX, b.gridY, b.in, b.out);
-    });
-    Object.keys(metaBackup.pipes).forEach((id) => {
-      const p = metaBackup.pipes[id];
-      placePipe(p, p.gridX, p.gridY, p.in, p.out);
-    });
-    isSelectMoving = false;
-  }
-}
-
-function moveMasksToOffset(last_delta_x, last_delta_y) {
-  const storageStore = useStorageStore();
-  const cellWidth = storageStore.cellWidth;
-  const cellHeight = storageStore.cellHeight;
-  const pixelDeltaX = now_pixel_x - base_pixel_x;
-  const pixelDeltaY = now_pixel_y - base_pixel_y;
-  const gridDeltaX = Math.round(pixelDeltaX / cellWidth);
-  const gridDeltaY = Math.round(pixelDeltaY / cellHeight);
-  // 检查是否为有效移动，避免原位置重绘的大量开支
-  if (
-    last_delta_x != null &&
-    Math.abs(gridDeltaX - last_delta_x) < 1 &&
-    Math.abs(gridDeltaY - last_delta_y) < 1
-  ) {
-    return {
-      gridDeltaX: last_delta_x,
-      gridDeltaY: last_delta_y,
-    };
-  }
-
-  const moveKind = (kind, meta) => {
-    Object.keys(selectGraphics[kind]).forEach((id) => {
-      selectGraphics[kind][id].moveToGrid({
-        gridX: meta[id].gridX + gridDeltaX,
-        gridY: meta[id].gridY + gridDeltaY,
-      });
-    });
-  };
-  moveKind("machines", metaRotateMove.machines);
-  moveKind("belts", metaRotateMove.belts);
-  moveKind("pipes", metaRotateMove.pipes);
-  generateConflictMask(
-    detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY),
-  );
-  return {
-    gridDeltaX,
-    gridDeltaY,
-  };
-}
-
-function setSelectBaseCenterPixel(metaBackup, storageStore) {
-  let max_x = -Infinity;
-  let max_y = -Infinity;
-  let min_x = Infinity;
-  let min_y = Infinity;
-  const cellHeight = storageStore.cellHeight;
-  const cellWidth = storageStore.cellWidth;
-  Object.values(metaBackup.machines).forEach((m) => {
-    max_x = Math.max(max_x, m.centerX + cellWidth * m.gridWidth * 0.5);
-    max_y = Math.max(max_y, m.centerY + cellHeight * m.gridHeight * 0.5);
-    min_x = Math.min(min_x, m.centerX - cellWidth * m.gridWidth * 0.5);
-    min_y = Math.min(min_y, m.centerY - cellHeight * m.gridHeight * 0.5);
-  });
-  Object.values(metaBackup.belts).forEach((b) => {
-    max_x = Math.max(max_x, b.x + cellWidth * 0.5);
-    max_y = Math.max(max_y, b.y + cellHeight * 0.5);
-    min_x = Math.min(min_x, b.x - cellWidth * 0.5);
-    min_y = Math.min(min_y, b.y - cellHeight * 0.5);
-  });
-  Object.values(metaBackup.pipes).forEach((p) => {
-    max_x = Math.max(max_x, p.x + cellWidth * 0.5);
-    max_y = Math.max(max_y, p.y + cellHeight * 0.5);
-    min_x = Math.min(min_x, p.x - cellWidth * 0.5);
-    min_y = Math.min(min_y, p.y - cellHeight * 0.5);
-  });
-  const { gridX, gridY } = pixelToGridNoneOffset(
-    (max_x + min_x) / 2,
-    (max_y + min_y) / 2,
-  );
-  console.log(gridX, gridY);
-  base_pixel_x = gridX * cellWidth;
-  base_pixel_y = gridY * cellHeight;
-}
-
-function generateConflictMask(metaConflict) {
-  refreshConflictIndicator();
-  conflictGraphics = drawConflictMaskOnMove(metaConflict);
-}
-
-function onStartPlace(name) {
-  onCancel();
-  placeIndicator.visible = true;
+function onStartPlace() {
+  S.placeIndicator.visible = true;
+  let start_direction = null;
   let final_direction = null;
   const onmousedown = (event) => {
-    const storageStore = useStorageStore();
-    console.log(storageStore.conveyorLocations)
-    if (conflictGraphics.length > 1 && final_direction != null) {
+    
+    const maskType = getMachineMaskTypeByPosition(event.gridX, event.gridY);
+    // 非第一次放置，检查是否有冲突对象
+    if (S.conflictGraphics.length > 1 && final_direction != null) {
       return;
     }
-    if (base_grid_x == null || base_grid_y == null) {
-      base_grid_x = event.gridX;
-      base_grid_y = event.gridY;
+    // 第一次放置，记录起点
+    if (S.base_grid_x == null || S.base_grid_y == null) {
+      // 点击在机器格上时，只允许端口格作为起点
+      if (maskType != null) {
+        if (S.nowPlaceIsBelt && maskType !== "bo") return;
+        if (!S.nowPlaceIsBelt && maskType !== "po") return;
+        const { offsetX, offsetY, dir } = scanAdjacentPort(
+          event.gridX,
+          event.gridY,
+          false
+        );
+        if (dir == null) return;
+        start_direction = dir;
+        S.base_grid_x = event.gridX + offsetX;
+        S.base_grid_y = event.gridY + offsetY;
+        return;
+      }
+      S.base_grid_x = event.gridX;
+      S.base_grid_y = event.gridY; 
       return;
     }
-    if (nowPlaceIsBelt) {
+
+    //这里需要做判断，检查是否放置的是机器的入口或者cross/split等特殊node
+    //先做机器port的判断
+    let real_final_direction = null;
+    let final_offsetX = 0;
+    let final_offsetY = 0;
+    if (maskType != null) {
+      const { offsetX, offsetY, dir } = scanAdjacentPort(
+        event.gridX,
+        event.gridY,
+        true,
+      );
+      if (dir == null) return;
+      // 这里表示该点为机器传送带入口
+
+
+      // 后续任务，对于以bi或者pi以及特殊node结尾的放置，直接cancel放置
+
+
+      let belt_inner = S.nowPlaceIsBelt && maskType == "bi"
+      let pipe_inner = !S.nowPlaceIsBelt && maskType == "pi"
+      if (belt_inner || pipe_inner) {
+        real_final_direction = dir;
+        final_offsetX = offsetX;
+        final_offsetY = offsetY;
+      }
+    }
+
+    if (S.nowPlaceIsBelt) {
+      console.log(S.base_grid_x, S.base_grid_y, S.now_grid_x + final_offsetX, S.now_grid_y + final_offsetY)
+      //console.log(start_direction, real_final_direction, final_direction)
       final_direction = placeBatchBelt(
-        { startX: base_grid_x, startY: base_grid_y },
-        { endX: now_grid_x, endY: now_grid_y },
-        final_direction,
-        undefined,
-        pipeOrBeltMode,
+        { startX: S.base_grid_x, startY: S.base_grid_y },
+        { endX: S.now_grid_x + final_offsetX, endY: S.now_grid_y + final_offsetY },
+        start_direction || final_direction,
+        real_final_direction,
+        S.pipeOrBeltMode,
       );
-    }else {
+    } else {
       final_direction = placeBatchPipe(
-        { startX: base_grid_x, startY: base_grid_y },
-        { endX: now_grid_x, endY: now_grid_y },
-        final_direction,
-        undefined,
-        pipeOrBeltMode,
+        { startX: S.base_grid_x, startY: S.base_grid_y },
+        { endX: S.now_grid_x + final_offsetX, endY: S.now_grid_y + final_offsetY },
+        start_direction || final_direction,
+        real_final_direction,
+        S.pipeOrBeltMode,
       );
     }
-    base_grid_x = event.gridX;
-    base_grid_y = event.gridY;
+    if (start_direction != null) start_direction = null;
+    S.base_grid_x = event.gridX;
+    S.base_grid_y = event.gridY;
+
+
+    const storageStore = useStorageStore();
+    //console.log(storageStore.machineLocations);
+    console.log(storageStore.conveyorLocations);
+    console.log(storageStore.pipeLocations);
+
   };
   const onmousemove = (event) => {
-    if (base_grid_x == null || base_grid_y == null) return;
-    if (indicatorGraphics.length != 0) refreshIndicator();
-    now_grid_x = event.gridX;
-    now_grid_y = event.gridY;
-    indicatorGraphics = drawMaskFromPosition(
+    if (S.base_grid_x == null || S.base_grid_y == null) return;
+    if (S.indicatorGraphics.length != 0) refreshIndicator();
+    S.now_grid_x = event.gridX;
+    S.now_grid_y = event.gridY;
+    S.indicatorGraphics = drawMaskFromPosition(
       {
-        startX: base_grid_x,
-        startY: base_grid_y,
+        startX: S.base_grid_x,
+        startY: S.base_grid_y,
       },
       {
-        endX: now_grid_x,
-        endY: now_grid_y,
+        endX: S.now_grid_x,
+        endY: S.now_grid_y,
       },
-      pipeOrBeltMode,
+      S.pipeOrBeltMode,
     );
-    generateConflictMask(detectOnPlaceBatch(indicatorGraphics, nowPlaceIsBelt));
+    generateConflictMask(detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt));
   };
-  if (!queue.mousedown[name]) {
-    queue.mousedown[name] = onmousedown;
+  if (!S.queue.mousedown[arguments[0]]) {
+    S.queue.mousedown[arguments[0]] = onmousedown;
   }
-  if (!queue.mousemove[name]) {
-    queue.mousemove[name] = onmousemove;
+  if (!S.queue.mousemove[arguments[0]]) {
+    S.queue.mousemove[arguments[0]] = onmousemove;
   }
 }
 
 function onStartPlaceBelt(name) {
   onCancel();
-  placeIndicator.visible = true;
-  nowPlaceIsBelt = true;
+  S.placeIndicator.visible = true;
+  S.nowPlaceIsBelt = true;
   onStartPlace();
 }
 
-function onStartPlacePipe() {
+function onStartPlacePipe(name) {
   onCancel();
-  placeIndicator.visible = true;
-  nowPlaceIsBelt = false;
+  S.placeIndicator.visible = true;
+  S.nowPlaceIsBelt = false;
   onStartPlace();
 }
 
 function onStartPlaceChangeMode() {
   refreshIndicator();
-  pipeOrBeltMode = !pipeOrBeltMode;
-  indicatorGraphics = drawMaskFromPosition(
+  S.pipeOrBeltMode = !S.pipeOrBeltMode;
+  S.indicatorGraphics = drawMaskFromPosition(
     {
-      startX: base_grid_x,
-      startY: base_grid_y,
+      startX: S.base_grid_x,
+      startY: S.base_grid_y,
     },
     {
-      endX: now_grid_x,
-      endY: now_grid_y,
+      endX: S.now_grid_x,
+      endY: S.now_grid_y,
     },
-    pipeOrBeltMode,
+    S.pipeOrBeltMode,
   );
-  generateConflictMask(detectOnPlaceBatch(indicatorGraphics, nowPlaceIsBelt));
+  generateConflictMask(detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt));
 }
 
 function onStartSelect(name) {
@@ -326,26 +186,26 @@ function onStartSelect(name) {
   const storageStore = useStorageStore();
 
   const onmousedown = (event) => {
-    base_pixel_x = event.client.x;
-    base_pixel_y = event.client.y;
-    selectIndicator.position.set(base_pixel_x, base_pixel_y);
+    S.base_pixel_x = event.client.x;
+    S.base_pixel_y = event.client.y;
+    S.selectIndicator.position.set(S.base_pixel_x, S.base_pixel_y);
     start_select = true;
   };
   const onmousemove = (event) => {
     if (!start_select) return;
-    selectIndicator.visible = true;
-    const width = event.client.x - base_pixel_x;
-    const height = event.client.y - base_pixel_y;
-    selectIndicator.drawSelectBox(width, height, base_pixel_x, base_pixel_y);
+    S.selectIndicator.visible = true;
+    const width = event.client.x - S.base_pixel_x;
+    const height = event.client.y - S.base_pixel_y;
+    S.selectIndicator.drawSelectBox(width, height, S.base_pixel_x, S.base_pixel_y);
   };
   const onmouseup = (event) => {
     start_select = false;
-    selectIndicator.visible = false;
+    S.selectIndicator.visible = false;
 
     const { masks, keys } = drawMaskSelectArea(
       {
-        startX: base_pixel_x,
-        startY: base_pixel_y,
+        startX: S.base_pixel_x,
+        startY: S.base_pixel_y,
       },
       {
         endX: event.client.x,
@@ -354,37 +214,37 @@ function onStartSelect(name) {
       set,
     );
     Object.keys(masks).forEach((key) => {
-      selectGraphics[key] = {
-        ...selectGraphics[key],
+      S.selectGraphics[key] = {
+        ...S.selectGraphics[key],
         ...masks[key],
       };
     });
 
     // StorageStore 备份选中的 meta 数据
-    metaBackup = { machines: {}, belts: {}, pipes: {} };
-    metaRotateMove = { machines: {}, belts: {}, pipes: {} };
-    Object.keys(selectGraphics.machines).forEach((id) => {
-      metaBackup.machines[id] = { ...storageStore.machines[id] };
-      metaRotateMove.machines[id] = { ...storageStore.machines[id] };
+    S.metaBackup = { machines: {}, belts: {}, pipes: {} };
+    S.metaRotateMove = { machines: {}, belts: {}, pipes: {} };
+    Object.keys(S.selectGraphics.machines).forEach((id) => {
+      S.metaBackup.machines[id] = { ...storageStore.machines[id] };
+      S.metaRotateMove.machines[id] = { ...storageStore.machines[id] };
     });
-    Object.keys(selectGraphics.belts).forEach((id) => {
-      metaBackup.belts[id] = { ...storageStore.conveyors[id] };
-      metaRotateMove.belts[id] = { ...storageStore.conveyors[id] };
+    Object.keys(S.selectGraphics.belts).forEach((id) => {
+      S.metaBackup.belts[id] = { ...storageStore.conveyors[id] };
+      S.metaRotateMove.belts[id] = { ...storageStore.conveyors[id] };
     });
-    Object.keys(selectGraphics.pipes).forEach((id) => {
-      metaBackup.pipes[id] = { ...storageStore.pipes[id] };
-      metaRotateMove.pipes[id] = { ...storageStore.pipes[id] };
+    Object.keys(S.selectGraphics.pipes).forEach((id) => {
+      S.metaBackup.pipes[id] = { ...storageStore.pipes[id] };
+      S.metaRotateMove.pipes[id] = { ...storageStore.pipes[id] };
     });
   };
 
-  if (!queue.mousedown[name]) {
-    queue.mousedown[name] = onmousedown;
+  if (!S.queue.mousedown[name]) {
+    S.queue.mousedown[name] = onmousedown;
   }
-  if (!queue.mousemove[name]) {
-    queue.mousemove[name] = onmousemove;
+  if (!S.queue.mousemove[name]) {
+    S.queue.mousemove[name] = onmousemove;
   }
-  if (!queue.mouseup[name]) {
-    queue.mouseup[name] = onmouseup;
+  if (!S.queue.mouseup[name]) {
+    S.queue.mouseup[name] = onmouseup;
   }
 }
 
@@ -393,7 +253,7 @@ function onStartSelectMove(name, is_copy = false) {
   refreshIndicatorPosition();
   refreshConflictIndicator();
 
-  const { machines, belts, pipes } = selectGraphics;
+  const { machines, belts, pipes } = S.selectGraphics;
   if (
     Object.keys(machines).length == 0 &&
     Object.keys(belts).length == 0 &&
@@ -402,27 +262,27 @@ function onStartSelectMove(name, is_copy = false) {
     return;
   }
 
-  isSelectMoving = true;
+  S.isSelectMoving = true;
 
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
 
   // 计算选中实体的中心 pixel 作为基准
-  setSelectBaseCenterPixel(metaBackup, storageStore);
+  setSelectBaseCenterPixel(S.metaBackup, storageStore);
   // Step 2: 删除原始实体（清 storage + 拆 Container）
   // 如果是复制操作，不删除原始实体
   if (!is_copy) {
-    Object.values(metaBackup.machines).forEach((m) => deleteMachine(m));
-    Object.values(metaBackup.belts).forEach((b) => deleteBelt(b));
-    Object.values(metaBackup.pipes).forEach((p) => deletePipe(p));
+    Object.values(S.metaBackup.machines).forEach((m) => deleteMachine(m));
+    Object.values(S.metaBackup.belts).forEach((b) => deleteBelt(b));
+    Object.values(S.metaBackup.pipes).forEach((p) => deletePipe(p));
   }
   // Step 3: 鼠标事件 — mousemove 实时偏移，mousedown 确认放置
   let last_delta_x = 0,
     last_delta_y = 0;
   const onmousemove = (event) => {
-    now_pixel_x = event.client.x;
-    now_pixel_y = event.client.y;
+    S.now_pixel_x = event.client.x;
+    S.now_pixel_y = event.client.y;
     const { gridDeltaX, gridDeltaY } = moveMasksToOffset(
       last_delta_x,
       last_delta_y,
@@ -432,22 +292,22 @@ function onStartSelectMove(name, is_copy = false) {
   };
 
   const onmousedown = (event) => {
-    const pixelDeltaX = event.client.x - base_pixel_x;
-    const pixelDeltaY = event.client.y - base_pixel_y;
+    const pixelDeltaX = event.client.x - S.base_pixel_x;
+    const pixelDeltaY = event.client.y - S.base_pixel_y;
     const gridDeltaX = Math.round(pixelDeltaX / cellWidth);
     const gridDeltaY = Math.round(pixelDeltaY / cellHeight);
     // 检查是否冲突
-    if (conflictGraphics.length > 0) {
+    if (S.conflictGraphics.length > 0) {
       console.log("PLACE CONFLICT");
       return;
     }
     // Step 4: 放置到最终位置
-    Object.keys(selectGraphics.machines).forEach((id) => {
-      const m = metaRotateMove.machines[id];
+    Object.keys(S.selectGraphics.machines).forEach((id) => {
+      const m = S.metaRotateMove.machines[id];
       placeMachine(m, m.gridX + gridDeltaX, m.gridY + gridDeltaY, is_copy);
     });
-    Object.keys(selectGraphics.belts).forEach((id) => {
-      const b = metaRotateMove.belts[id];
+    Object.keys(S.selectGraphics.belts).forEach((id) => {
+      const b = S.metaRotateMove.belts[id];
       placeBelt(
         b,
         b.gridX + gridDeltaX,
@@ -457,8 +317,8 @@ function onStartSelectMove(name, is_copy = false) {
         is_copy,
       );
     });
-    Object.keys(selectGraphics.pipes).forEach((id) => {
-      const p = metaRotateMove.pipes[id];
+    Object.keys(S.selectGraphics.pipes).forEach((id) => {
+      const p = S.metaRotateMove.pipes[id];
       placePipe(
         p,
         p.gridX + gridDeltaX,
@@ -468,11 +328,11 @@ function onStartSelectMove(name, is_copy = false) {
         is_copy,
       );
     });
-    isSelectMoving = false;
+    S.isSelectMoving = false;
     onCancel();
   };
-  queue.mousemove[name] = onmousemove;
-  queue.mousedown[name] = onmousedown;
+  S.queue.mousemove[name] = onmousemove;
+  S.queue.mousedown[name] = onmousedown;
 }
 
 function onStartSelectRotate(name) {
@@ -480,34 +340,34 @@ function onStartSelectRotate(name) {
   // 清除所有的selectGraphics
   refreshSelectIndicator();
   // 基准点作为旋转中心点, 旋转选中实体
-  Object.keys(metaRotateMove.machines).forEach((id) => {
-    const machine = metaRotateMove.machines[id];
-    metaRotateMove.machines[id] = rotateMachineByCenter(
+  Object.keys(S.metaRotateMove.machines).forEach((id) => {
+    const machine = S.metaRotateMove.machines[id];
+    S.metaRotateMove.machines[id] = rotateMachineByCenter(
       machine,
-      base_pixel_x,
-      base_pixel_y,
+      S.base_pixel_x,
+      S.base_pixel_y,
     );
   });
-  Object.keys(metaRotateMove.belts).forEach((id) => {
-    const belt = metaRotateMove.belts[id];
-    metaRotateMove.belts[id] = rotateBeltByCenter(
+  Object.keys(S.metaRotateMove.belts).forEach((id) => {
+    const belt = S.metaRotateMove.belts[id];
+    S.metaRotateMove.belts[id] = rotateBeltByCenter(
       belt,
-      base_pixel_x,
-      base_pixel_y,
+      S.base_pixel_x,
+      S.base_pixel_y,
     );
   });
-  Object.keys(metaRotateMove.pipes).forEach((id) => {
-    const pipe = metaRotateMove.pipes[id];
-    metaRotateMove.pipes[id] = rotatePipeByCenter(
+  Object.keys(S.metaRotateMove.pipes).forEach((id) => {
+    const pipe = S.metaRotateMove.pipes[id];
+    S.metaRotateMove.pipes[id] = rotatePipeByCenter(
       pipe,
-      base_pixel_x,
-      base_pixel_y,
+      S.base_pixel_x,
+      S.base_pixel_y,
     );
   });
   // 重新绘制选中实体的 mask
-  selectGraphics.machines = drawMachineMask(metaRotateMove.machines, set);
-  selectGraphics.belts = drawBeltMask(metaRotateMove.belts, set);
-  selectGraphics.pipes = drawPipeMask(metaRotateMove.pipes, set);
+  S.selectGraphics.machines = drawMachineMask(S.metaRotateMove.machines, set);
+  S.selectGraphics.belts = drawBeltMask(S.metaRotateMove.belts, set);
+  S.selectGraphics.pipes = drawPipeMask(S.metaRotateMove.pipes, set);
   // 移动 mask 到新的位置
   moveMasksToOffset();
 }
@@ -517,9 +377,9 @@ function onStartSelectCopy(name) {
 }
 
 function onStartSelectDelete() {
-  Object.values(metaBackup.machines).forEach((m) => deleteMachine(m));
-  Object.values(metaBackup.belts).forEach((b) => deleteBelt(b));
-  Object.values(metaBackup.pipes).forEach((p) => deletePipe(p));
+  Object.values(S.metaBackup.machines).forEach((m) => deleteMachine(m));
+  Object.values(S.metaBackup.belts).forEach((b) => deleteBelt(b));
+  Object.values(S.metaBackup.pipes).forEach((p) => deletePipe(p));
   onCancel();
 }
 
@@ -530,7 +390,7 @@ function onCancel() {
   refreshIndicatorPosition();
   refreshHandleQueue();
   rebuildIfSelectMoving();
-  placeIndicator.visible = false;
+  S.placeIndicator.visible = false;
   const commandStore = useCommandStore();
   commandStore.last_command = CMD_DEFAULT;
   commandStore.select_command = CMD_DEFAULT;
@@ -538,15 +398,15 @@ function onCancel() {
 
 function onMouseMove(event) {
   placeIndicatorHandle(event);
-  Object.values(queue.mousemove).forEach((item) => item(event));
+  Object.values(S.queue.mousemove).forEach((item) => item(event));
 }
 
 function onMouseDown(event) {
-  Object.values(queue.mousedown).forEach((item) => item(event));
+  Object.values(S.queue.mousedown).forEach((item) => item(event));
 }
 
 function onMouseUp(event) {
-  Object.values(queue.mouseup).forEach((item) => item(event));
+  Object.values(S.queue.mouseup).forEach((item) => item(event));
 }
 
 export {
@@ -561,5 +421,4 @@ export {
   onStartSelectCopy,
 };
 export { onMouseMove, onMouseDown, onMouseUp };
-export { proxyForHandle };
 export { initIndicator };

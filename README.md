@@ -2,195 +2,304 @@
 
 # SimulationEngine
 
-**工厂物流仿真引擎** — 网格化布局编辑 · 实体管理 · 实时可视化
+**A grid-based factory logistics simulation engine built with Vue 3 + Pixi.js**
 
-[![Vue 3](https://img.shields.io/badge/Vue_3-4FC08D?logo=vue.js&logoColor=fff)](https://vuejs.org/)
-[![Pixi.js 8](https://img.shields.io/badge/Pixi.js_8-E01E5A?logo=pixi.js&logoColor=fff)](https://pixijs.com/)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=fff)](https://vite.dev/)
-[![Pinia](https://img.shields.io/badge/Pinia-FFD859?logo=pinia&logoColor=000)](https://pinia.vuejs.org/)
+支持机器、传送带、管道等实体编辑，提供实时碰撞检测、端口连接、框选编辑及可视化交互能力。
+
+![Vue](https://img.shields.io/badge/Vue_3-4FC08D?logo=vuedotjs&logoColor=white)
+![Pixi](https://img.shields.io/badge/Pixi.js_8-E01E5A?logo=pixijs&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Pinia](https://img.shields.io/badge/Pinia-FFD859?logo=pinia&logoColor=black)
 
 </div>
 
 ---
 
-## Quick Start
+# Overview
 
-```bash
-pnpm install
-pnpm dev        # → http://localhost:5173
-pnpm build      # 生产构建
-pnpm preview    # 预览构建产物
-```
+SimulationEngine 是一个面向工厂物流类游戏的二维网格仿真引擎。
 
----
+它提供：
 
-## Architecture
+- 网格地图编辑
+- 机器放置与旋转
+- 传送带 / 管道铺设
+- 自动端口连接
+- 实时冲突检测
+- 框选、移动、复制、删除
+- Pixi.js 高性能渲染
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Stores              Pinia 状态层 (零项目依赖)                   │
-│  StorageStore · MachineStore · BeltStore · PipeStore            │
-├──────────────────────────────────────────────────────────────────┤
-│  Storage             实体持久化 · 网格映射                        │
-│  MachineStorage · BeltStorage · PipeStorage                     │
-├──────────────────────────────────────────────────────────────────┤
-│  Sub                 业务编排层                                  │
-│  Machine · Belt · Pipe · Indicator                              │
-├──────────────────────┬───────────────────────────────────────────┤
-│  Stage               │  Container Sub                           │
-│  Pixi 渲染层         │  Pixi 容器封装                           │
-│  SimStage · SimInit  │  MachineContainer                        │
-│  MachineStage        │  BeltContainer                           │
-│  BeltStage           │  PipeContainer                           │
-│  PipeStage           │                                          │
-│  IndicatorStage      │                                          │
-├──────────────────────┴───────────────────────────────────────────┤
-│  Middleware          工具层                                      │
-│  PositionConvert · KeyboardHandle · ConflictDetect              │
-│  GridRegistry · UndoProxy                                       │
-├──────────────────────────────────────────────────────────────────┤
-│  Graphic             可复用图形类                                 │
-│  IndicatorGraphic · SelectGraphic                               │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### 分层原则
-
-- **Stores** → 只依赖 Vue/Pinia，不引用项目文件
-- **Storage / Middleware / Graphic** → 只向下依赖 Stores
-- **Sub** → 编排层，协调存储 + 渲染 + 中间件
-- **Stage / Container Sub** → 自包含，只依赖 Pixi.js
-
-### 渲染层级
-
-```
-viewportContainer (可缩放/拖拽)
-  ├── backgroundContainer   网格背景
-  ├── beltRootContainer     传送带
-  ├── pipeRootContainer     管道
-  ├── machineRootContainer  机器
-  └── indicatorContainer    指示器/遮罩 (顶层)
-```
+整个项目采用**数据驱动 + 分层架构**设计，渲染、业务、存储完全解耦。
 
 ---
 
-## Features
+# Features
 
-### 机器
+## Machine System
 
-- **mask 矩阵** — 二维网格描述机器内部布局，旋转 = 矩阵顺时针 90° + 宽高交换 + 锚点切换，全程数据驱动
-- **端口系统** — 四边定义 `belt_in/out` · `pipe_in/out`，点击端口自动计算外部相邻格和连接方向
-- **旋转适配** — 端口用 `sprite.toGlobal` 计算世界坐标，不受容器旋转影响
-
-### 传送带 & 管道
-
-- 结构对称，共享管线模式。支持逐条创建和**批量铺设**（自动 L 形路径拐弯）
-- **连续铺接** — 上一段铺设的末尾方向作为下一段的导入方向，冲突检测放行起点覆写
-- **BFS 连通域** — 沿 `out → in` 遍历链路
-
-### 选择系统
-
-```
-选择 → 框选累加 (Set去重)
-  │
-  ├─ MOVE    → 备份 → 删除原始 → 实时偏移 + 碰撞检测 → 确认放置
-  ├─ ROTATE  → 以包围盒中心为基准旋转
-  ├─ COPY    → 备份 → 删除原始 → 偏移 → 放置 (生成新ID)
-  └─ DELETE  → 直接删除
-```
-
-- **metaBackup 容灾** — 移动/旋转/复制前备份，取消操作时一键恢复原始位置
-
-### 冲突检测
-
-- **实时检查** — mousemove 时检测目标位置，冲突区域红色遮罩
-- **拦截放置** — mousedown 时 `conflictGraphics.length > 0` 则拦截
-- **覆写放行** — 连续铺设时允许起点格覆写，额外冲突仍拦截
-
-### 键盘命令
-
-| 键 | 命令 | 说明 |
-|---|------|------|
-| `x` | SELECT | 框选模式 |
-| `e` | PLACE_BELT | 传送带放置 |
-| `q` | PLACE_PIPE | 管道放置 |
-| `Esc` | CANCEL | 取消/退出 |
-| `m` | MOVE | 移动选中 |
-| `r` | ROTATE | 旋转选中 |
-| `f` | DELETE | 删除选中 |
-| `Ctrl+C` | COPY | 复制选中 |
-
-命令路由：`KeyBoardStore(定义) → KeyboardHandle(分发) → Indicator(执行)`
+- Mask 矩阵描述机器占地
+- 任意角度（90°）旋转
+- 自动宽高交换
+- 自动锚点切换
+- Belt / Pipe 四方向端口
+- Hover 高亮反馈
 
 ---
 
-## Project Structure
+## Belt & Pipe System
+
+两套系统采用统一架构设计。
+
+支持：
+
+- 单段放置
+- 连续铺设
+- 自动 L 型路径
+- 自动连接机器端口
+- 同格覆写
+- BFS 连通域搜索
+
+---
+
+## Selection System
+
+支持编辑器常见操作：
+
+- 框选
+- 移动
+- 旋转
+- 删除
+- 复制
+
+所有编辑过程均支持实时预览与冲突检测。
+
+---
+
+## Collision Detection
+
+实时检测所有实体占用情况。
+
+支持：
+
+- 放置预检测
+- 实时冲突高亮
+- 端口放行
+- 覆写放行
+- 批量实体检测
+
+---
+
+## Indicator System
+
+提供丰富的编辑反馈：
+
+| Indicator | Description |
+|-----------|-------------|
+| Place | 放置预览 |
+| Conflict | 冲突区域 |
+| Hover | 鼠标悬停 |
+| Port | 端口高亮 |
+| Select | 框选区域 |
+
+---
+
+# Architecture
+
+```
+Application
+│
+├── Stores
+│      Pinia 状态管理
+│
+├── Storage
+│      网格映射 / 实体存储
+│
+├── Sub
+│      业务逻辑编排
+│
+├── Stage
+│      Pixi 渲染层
+│
+├── Container
+│      Pixi 实体封装
+│
+├── Middleware
+│      工具与算法
+│
+└── Graphic
+       可复用图形组件
+```
+
+项目遵循单向依赖原则：
+
+```
+Stores
+    ↑
+Storage
+    ↑
+Middleware
+    ↑
+Sub
+    ↑
+Stage
+```
+
+低层永远不会依赖高层。
+
+---
+
+# Rendering Hierarchy
+
+```
+Viewport
+
+├── Background
+├── Belt Layer
+├── Pipe Layer
+├── Machine Layer
+└── Indicator Layer
+```
+
+所有渲染均基于 Pixi.js Container 管理。
+
+---
+
+# Directory Structure
 
 ```
 src/
-├── components/             Vue 主视图 (Index.vue)
-├── stores/                 Pinia 状态 · 场景配置 · 类型定义
-│   ├── StorageStore.js     场景尺寸 · 实体元数据容器
-│   ├── MachineStore.js     机器类型定义
-│   ├── BeltStore.js        传送带状态管理
-│   ├── PipeStore.js        管道状态管理
-│   └── KeyBoardStore.js    键盘命令映射
-├── core_stage/             Pixi 渲染层
-│   ├── SimStage.js         根舞台容器初始化
-│   ├── SimInit.js          网格线绘制 · 交互捕获区域
-│   ├── MachineStage.js     机器渲染管理
-│   ├── BeltStage.js        传送带渲染管理
-│   ├── PipeStage.js        管道渲染管理
-│   └── IndicatorStage.js   指示器渲染管理
-├── core_sub/               实体编排 · 交互控制
-│   ├── Machine.js          机器实体逻辑
-│   ├── Belt.js             传送带实体逻辑
-│   ├── Pipe.js             管道实体逻辑
-│   └── Indicator.js        交互指示器控制
-├── core_storage/           实体存取 · 网格映射
-│   ├── MachineStorage.js   机器存储管理
-│   ├── BeltStorage.js      传送带存储管理
-│   └── PipeStorage.js      管道存储管理
-├── core_container_sub/     Pixi 容器封装 (端口交互)
-│   ├── MachineContainer.js 机器容器封装
-│   ├── BeltContainer.js    传送带容器封装
-│   └── PipeContainer.js    管道容器封装
-├── core_graphic/           可复用图形类
-│   ├── IndicatorGraphic.js 指示器图形 (高亮/冲突)
-│   └── SelectGraphic.js    选框图形
-├── core_middleware/        工具层
-│   ├── PositionConvert.js  像素/网格坐标转换
-│   ├── KeyboardHandle.js   键盘命令分发
-│   ├── ConflictDetect.js   碰撞检测
-│   ├── GridRegistry.js     网格实体查询 (按像素/区域扫描)
-│   └── UndoProxy.js        撤销代理
-└── assets/                 静态资源
+
+components/
+    Vue 页面
+
+stores/
+    Pinia 状态管理
+
+core_stage/
+    Pixi 渲染层
+
+core_container_sub/
+    Pixi Container 封装
+
+core_sub/
+    实体业务逻辑
+
+core_storage/
+    网格映射
+
+core_graphic/
+    图形组件
+
+core_middleware/
+    工具与算法
+
+assets/
 ```
 
 ---
 
-## Configuration
+# Keyboard Shortcuts
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| 场景宽高 | `600 × 600` | 像素 |
-| 网格数 | `10 × 10` | 行列 |
-| 背景色 | `0xffffff` | 白色 |
-
-配置集中在 `StorageStore`，`cellWidth` / `cellHeight` 自动计算。
+| Key | Action |
+|------|--------|
+| X | Select |
+| E | Place Belt |
+| Q | Place Pipe |
+| M | Move |
+| R | Rotate |
+| F | Delete |
+| Ctrl + C | Copy |
+| Esc | Cancel |
 
 ---
 
-## Status
+# Quick Start
 
-| 模块 | 状态 |
-|------|------|
-| 场景初始化 (网格 + 交互捕获) | ✅ |
-| 机器 CRUD / 旋转 / 端口系统 | ✅ |
-| 传送带 (单条/批量/连通域/旋转) | ✅ |
-| 管道系统 | ✅ |
-| 键盘命令路由 | ✅ |
-| 框选 + 移动 + 旋转 + 删除 + 复制 | ✅ |
-| 碰撞检测 (实时 + 拦截) | ✅ |
-| 网格实体查询 (GridRegistry) | ✅ |
-| 撤销 / 重做系统 (UndoProxy) | ⏳ |
+Install dependencies
+
+```bash
+pnpm install
+```
+
+Development
+
+```bash
+pnpm dev
+```
+
+Production build
+
+```bash
+pnpm build
+```
+
+Preview
+
+```bash
+pnpm preview
+```
+
+---
+
+# Configuration
+
+默认配置位于：
+
+```
+stores/StorageStore.js
+```
+
+包括：
+
+- Scene Size
+- Grid Count
+- Cell Size
+- Background Color
+
+所有网格尺寸均自动计算，无需手动维护。
+
+---
+
+# Current Status
+
+| Module | Status |
+|---------|--------|
+| Scene | ✅ |
+| Machine System | ✅ |
+| Belt System | ✅ |
+| Pipe System | ✅ |
+| Selection | ✅ |
+| Collision Detection | ✅ |
+| Indicator | ✅ |
+| Grid Registry | ✅ |
+
+---
+
+# Tech Stack
+
+- Vue 3
+- Pixi.js 8
+- Pinia
+- Vite
+
+---
+
+# Design Philosophy
+
+SimulationEngine 采用**数据驱动（Data Driven）**的设计理念。
+
+所有实体均维护独立的数据模型，渲染层仅负责展示。
+
+这种架构带来了：
+
+- 高可维护性
+- 高扩展性
+- 业务与渲染解耦
+- 更容易实现 Undo / Redo
+- 更容易支持多人同步与序列化
+
+---
+
+# License
+
+MIT License

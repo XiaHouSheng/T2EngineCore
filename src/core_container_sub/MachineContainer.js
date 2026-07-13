@@ -1,4 +1,4 @@
-import { Sprite, Container, Assets } from "pixi.js";
+import { Sprite, Container, Rectangle, Assets } from "pixi.js";
 import {
   getCellSize,
   gridToPixel,
@@ -35,10 +35,13 @@ class MachineContainer extends Container {
     }
 
     const bounds = this.portContainer.getBounds();
-    this.pivot.set(machine.anchor[machine.rotation].x * bounds.width, machine.anchor[machine.rotation].y * bounds.height);
+    this.pivot.set(
+      machine.anchor[machine.rotation].x * bounds.width,
+      machine.anchor[machine.rotation].y * bounds.height,
+    );
     this.position.set(x, y);
-  }
 
+  }
 
 }
 
