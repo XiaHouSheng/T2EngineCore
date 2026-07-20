@@ -72,6 +72,8 @@ function placeBatchPipe(
   start_pipe_dir_in = null,
   end_pipe_dir_out = null,
   change_mode = true,
+  skip_first = false,
+  skip_last = false,
 ) {
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
@@ -95,6 +97,7 @@ function placeBatchPipe(
     for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
       let pre_i = delta_num > 0 ? -i : i;
       if (i == 0) {
+        if (skip_first) continue;
         const pipe = getPipeByPosition(startX, startY);
         if (pipe) deletePipe(pipe);
         placePipe(
@@ -107,6 +110,7 @@ function placeBatchPipe(
         continue;
       }
       if (i == Math.abs(delta_num)) {
+        if (skip_last) continue;
         placePipe(
           createPipe("default"),
           startX,
@@ -133,6 +137,7 @@ function placeBatchPipe(
     for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
       let pre_i = delta_num > 0 ? -i : i;
       if (i == 0) {
+        if (skip_first) continue;
         const pipe = getPipeByPosition(startX, startY);
         if (pipe) deletePipe(pipe);
         placePipe(
@@ -145,6 +150,7 @@ function placeBatchPipe(
         continue;
       }
       if (i == Math.abs(delta_num)) {
+        if (skip_last) continue;
         placePipe(
           createPipe("default"),
           startX + pre_i,
@@ -199,6 +205,7 @@ function placeBatchPipe(
         next_y = startY;
         break;
     }
+    if (i === 0 && skip_first) continue;
     if (i === 0 && start_pipe_dir_in) {
       const pipe = getPipeByPosition(startX, startY);
       if (pipe) deletePipe(pipe);
@@ -251,6 +258,7 @@ function placeBatchPipe(
         next_y = crossY;
         break;
     }
+    if (i === Math.abs(delta_num) && skip_last) continue;
     if (end_pipe_dir_out && i === Math.abs(delta_num)) {
       placePipe(
         createPipe("default"),

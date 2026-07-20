@@ -39,8 +39,34 @@ function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
   saveBelt(belt, drawBelt(belt));
 }
 
+function placeNode(belt, x, y) {
+  const beltStore = useBeltStore();
+  const in_dir = beltStore.nodeDir[belt.type].in;
+  const out_dir = beltStore.nodeDir[belt.type].out;
+  placeBelt(belt, x, y, in_dir, out_dir);
+}
+
+function rotateNode(belt) {
+  const beltStore = useBeltStore();
+  let temp_in = [];
+  let temp_out = [];
+  for (let dir of belt.in.split("|")) {
+    temp_in.push(beltStore.rotateMap[dir]);
+  }
+  for (let dir of belt.out.split("|")) {
+    temp_out.push(beltStore.rotateMap[dir]);
+  }
+  belt.in = temp_in.join("|");
+  belt.out = temp_out.join("|");
+  return belt;
+}
+
 function rotateBelt(belt) {
   const beltStore = useBeltStore();
+  if (beltStore.nodeTypes.has(belt.type)) {
+    belt = rotateNode(belt);
+    return belt;
+  }
   belt.in = beltStore.rotateMap[belt.in];
   belt.out = beltStore.rotateMap[belt.out];
   return belt;
@@ -72,6 +98,8 @@ function placeBatchBelt(
   start_belt_dir_in = null,
   end_belt_dir_out = null,
   change_mode = true,
+  skip_first = false,
+  skip_last = false,
 ) {
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
@@ -95,6 +123,7 @@ function placeBatchBelt(
     for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
       let pre_i = delta_num > 0 ? -i : i;
       if (i == 0) {
+        if (skip_first) continue;
         const belt = getBeltByPosition(startX, startY);
         if (belt) deleteBelt(belt);
         placeBelt(
@@ -107,6 +136,7 @@ function placeBatchBelt(
         continue;
       }
       if (i == Math.abs(delta_num)) {
+        if (skip_last) continue;
         placeBelt(
           createBelt("default"),
           startX,
@@ -133,6 +163,7 @@ function placeBatchBelt(
     for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
       let pre_i = delta_num > 0 ? -i : i;
       if (i == 0) {
+        if (skip_first) continue;
         const belt = getBeltByPosition(startX, startY);
         if (belt) deleteBelt(belt);
         placeBelt(
@@ -145,6 +176,7 @@ function placeBatchBelt(
         continue;
       }
       if (i == Math.abs(delta_num)) {
+        if (skip_last) continue;
         placeBelt(
           createBelt("default"),
           startX + pre_i,
@@ -199,6 +231,7 @@ function placeBatchBelt(
         next_y = startY;
         break;
     }
+    if (i === 0 && skip_first) continue;
     if (i === 0 && start_belt_dir_in) {
       const belt = getBeltByPosition(startX, startY);
       if (belt) deleteBelt(belt);
@@ -251,6 +284,7 @@ function placeBatchBelt(
         next_y = crossY;
         break;
     }
+    if (i === Math.abs(delta_num) && skip_last) continue;
     if (end_belt_dir_out && i === Math.abs(delta_num)) {
       placeBelt(
         createBelt("default"),
@@ -283,7 +317,9 @@ function deleteBatchBelt(belt) {
 export {
   createBelt,
   placeBelt,
+  placeNode,
   rotateBelt,
+  rotateNode,
   rotateBeltByCenter,
   deleteBelt,
   placeBatchBelt,

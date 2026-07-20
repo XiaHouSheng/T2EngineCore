@@ -33,6 +33,7 @@ function drawMaskFromPosition(
   start_position,
   end_position,
   change_mode = true,
+  skip_first = false,
 ) {
   const { startX, startY } = start_position;
   const { endX, endY } = end_position;
@@ -45,6 +46,7 @@ function drawMaskFromPosition(
   if (startX === endX) {
     const delta_num = startY - endY;
     for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
+      if (skip_first && i === 0) continue;
       let pre_i = delta_num > 0 ? -i : i;
       const mask = drawMask({ gridX: startX, gridY: startY + pre_i });
       masks.push(mask);
@@ -55,6 +57,7 @@ function drawMaskFromPosition(
   if (startY === endY) {
     const delta_num = startX - endX;
     for (let i = 0; i < Math.abs(delta_num) + 1; i++) {
+      if (skip_first && i === 0) continue;
       let pre_i = delta_num > 0 ? -i : i;
       const mask = drawMask({ gridX: startX + pre_i, gridY: startY });
       masks.push(mask);
@@ -70,6 +73,7 @@ function drawMaskFromPosition(
   delta_num = change_mode ? startY - crossY : startX - crossX;
   //place start -> cross
   for (let i = 0; i < Math.abs(delta_num); i++) {
+    if (skip_first && i === 0) continue;
     let next_x, next_y;
     if (change_mode) {
       next_x = startX;

@@ -19,20 +19,46 @@ function detectOnPlaceBelt(machine) {
   const storageStore = useStorageStore();
 }
 
+function detectOnPlaceFinalIsNode(baseGridX, baseGridY, endX, endY, pipeOrBeltMode) {
+  let finalDir;
+  if (baseGridX === endX) {
+    finalDir = endY > baseGridY ? "down" : "up";
+  } else if (baseGridY === endY) {
+    finalDir = endX > baseGridX ? "right" : "left";
+  } else if (pipeOrBeltMode) {
+    // vertical-first, last segment is horizontal
+    finalDir = endX > baseGridX ? "right" : "left";
+  } else {
+    // horizontal-first, last segment is vertical
+    finalDir = endY > baseGridY ? "down" : "up";
+  }
+
+  const belt = getBeltByPosition(endX, endY);
+  const pipe = getPipeByPosition(endX, endY);
+  const entity = belt || pipe;
+  if (!entity) return false;
+
+  const inDirs = entity.type === "cross"
+    ? ["up", "down", "left", "right"]
+    : entity.in.split("|");
+
+  return inDirs.includes(finalDir);
+}
+
 function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
-  //machine 不能和belt以及pipe重叠
+  //machine cannot overlap with belt or pipe
   const metaConflict = {
     machines: {},
     belts: {},
     pipes: {},
   };
   const { machines, belts, pipes } = metaRotateMove;
-  // 检查machine范围内是否有belt/pipe重叠
+  // Check if machine area overlaps with belt/pipe
   Object.values(machines).forEach((machine) => {
     mapMachineArea(
       machine,
       (x, y, maskType) => {
-        // 旋转后 machine.x/y 可能过期，始终用 centerX/Y
+        // rotation may make machine.x/y stale, always use centerX/Y
         const belt = getBeltByPosition(x + gridDeltaX + 1, y + gridDeltaY + 1);
         const pipe = getPipeByPosition(x + gridDeltaX + 1, y + gridDeltaY + 1);
         if (belt) {
@@ -45,7 +71,7 @@ function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
       true,
     );
   });
-  // 检查belt/pipe范围内是否有machine/belt/pipe重叠
+  // Check if belt/pipe area overlaps with machine/belt/pipe
   Object.values(belts).forEach((belt) => {
     const machine = getMachineByPosition(
       belt.gridX + gridDeltaX,
@@ -112,7 +138,8 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true) {
     belts: {},
     pipes: {},
   };
-  indicatorGraphics.forEach((graphic) => {
+  for (let i = 0; i < indicatorGraphics.length; i++) {
+    const graphic = indicatorGraphics[i];
     const machine = getMachineByPosition(
       graphic.gridX,
       graphic.gridY,
@@ -138,7 +165,7 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true) {
     if (pipe_ && !is_belt) {
       metaConflict.pipes[pipe_.id] = pipe_;
     }
-  });
+  }
   return metaConflict;
 }
 
@@ -151,4 +178,5 @@ export {
   detectOnHoverMachine,
   detectOnHoverBelt,
   detectOnHoverPipe,
+  detectOnPlaceFinalIsNode,
 };

@@ -11,6 +11,9 @@ import {
 } from "../core_sub/Machine.js";
 import {
   placeBelt,
+  createBelt,
+  placeNode,
+  rotateBelt,
   placeBatchBelt,
   deleteBatchBelt,
   deleteBelt,
@@ -48,6 +51,9 @@ onMounted(() => {
   const machine = createMachine("testType4");
   const rotate_machine = rotateMachine(machine);
   placeMachine(rotate_machine, 4, 4);
+  const belt = createBelt("cross");
+  placeNode(belt, 7, 8);
+  //const rotate_belt = rotateBelt(belt);
   //placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
   //const choose_belt = getBeltByPosition(7, 8);
   //const belts = findBeltNearBy(choose_belt);
