@@ -70,34 +70,23 @@ function directionConstraint(gridX, gridY, startX, startY, pipeOrBeltMode) {
   return { process_grid_x: px, process_grid_y: py };
 }
 
-function scanAdjacentPort(gridX, gridY, reverse = false) {
-  const dirs = [
-    { dx: 0, dy: -1, dir: "up" },
-    { dx: 0, dy: 1, dir: "down" },
-    { dx: -1, dy: 0, dir: "left" },
-    { dx: 1, dy: 0, dir: "right" },
-  ];
-  const reverse_dirs = [
-    { dx: 0, dy: -1, dir: "down" },
-    { dx: 0, dy: 1, dir: "up" },
-    { dx: -1, dy: 0, dir: "right" },
-    { dx: 1, dy: 0, dir: "left" },
-  ];
-  for (const { dx, dy, dir } of reverse ? reverse_dirs : dirs) {
-    const maskType = getMachineMaskTypeByPosition(gridX + dx, gridY + dy);
-    if (maskType == null) {
-      return {
-        offsetX: dx,
-        offsetY: dy,
-        dir,
-      };
-    }
+function scanAdjacentPort(gridX, gridY) {
+  const maskType = getMachineMaskTypeByPosition(gridX, gridY);
+  if (!maskType || !maskType.includes(".")) {
+    return { offsetX: null, offsetY: null, dir: null };
   }
-  return {
-    offsetX: null,
-    offsetY: null,
-    dir: null,
+  const [type_, dir] = maskType.split(".");
+  const outputTypes = ["po", "bo"];
+  const dirToOffset = {
+    up: { dx: 0, dy: -1 },
+    down: { dx: 0, dy: 1 },
+    left: { dx: -1, dy: 0 },
+    right: { dx: 1, dy: 0 },
   };
+  const opposite = { up: "down", down: "up", left: "right", right: "left" };
+  const offset = outputTypes.includes(type_) ? dirToOffset[dir] : dirToOffset[opposite[dir]];
+  if (!offset) return { offsetX: null, offsetY: null, dir: null };
+  return { offsetX: offset.dx, offsetY: offset.dy, dir };
 }
 
 export { proxyForHandle, scanAdjacentPort, directionConstraint };

@@ -21,7 +21,6 @@ import {
   detectOnHoverPipe,
 } from "./ConflictDetect.js";
 import { pixelToGridNoneOffset } from "./PositionConvert.js";
-
 // === 状态 ===
 export const S = {
   pipeOrBeltMode: true,

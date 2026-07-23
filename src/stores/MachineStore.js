@@ -17,10 +17,10 @@ export const useMachineStore = defineStore("machineStore", () => {
         },
       ],
       mask: [
-        ["bi", "bi", "bi", "bi", "bi"],
-        ["pi", "ma", "ma", "ma", "po"],
+        ["bi.down", "bi.down", "bi.down", "bi.up", "bi.down"],
+        ["pi.right", "ma", "ma", "ma", "po.right"],
         ["ma", "ma", "ma", "ma", "ma"],
-        ["bo", "bo", "bo", "bo", "bo"],
+        ["bo.down", "bo.down", "bo.down", "bo.down", "bo.down"],
       ],
     },
   })

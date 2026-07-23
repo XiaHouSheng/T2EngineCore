@@ -65,6 +65,17 @@ function rotateMachine(machine) {
     }
   }
   machine.mask = res;
+  // 旋转 port 的方向后缀 (bo.down → bo.right)
+  const portRotateMap = { up: "right", down: "left", left: "up", right: "down" };
+  for (let r = 0; r < machine.mask.length; r++) {
+    for (let c = 0; c < machine.mask[r].length; c++) {
+      const cell = machine.mask[r][c];
+      if (cell && cell.includes(".")) {
+        const [type, dir] = cell.split(".");
+        machine.mask[r][c] = `${type}.${portRotateMap[dir] || dir}`;
+      }
+    }
+  }
   machine.gridWidth = rows;
   machine.gridHeight = cols;
   machine.rotation = machine.rotation === 0 ? 1 : 0;
@@ -81,7 +92,6 @@ function rotateMachineByCenter(machine, x, y) {
   machine = rotateMachine(machine);
   // 重新计算网格坐标
   const { gridX, gridY } = getMachineGridPosition(machine);
-
   machine.gridX = gridX;
   machine.gridY = gridY;
   return machine;

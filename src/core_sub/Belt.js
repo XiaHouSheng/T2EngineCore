@@ -31,6 +31,20 @@ function createBelt(typename) {
 function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
   // 如果是复制操作，生成新的 id
   if (is_copy) belt.id = nanoid();
+
+  // 交叉检测：当前位置已有直线 default 带且方向垂直，替换为 cross
+  if (belt.type === "default") {
+    const existing = getBeltByPosition(x, y);
+    if (existing && existing.type === "default" && existing.in === existing.out) {
+      const vDirs = new Set(["up", "down"]);
+      if (vDirs.has(in_dir) !== vDirs.has(existing.in)) {
+        deleteBelt(existing);
+        placeBeltNode(createBelt("cross"), x, y);
+        return;
+      }
+    }
+  }
+
   belt.gridX = x;
   belt.gridY = y;
   belt.in = in_dir;
@@ -39,14 +53,14 @@ function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
   saveBelt(belt, drawBelt(belt));
 }
 
-function placeNode(belt, x, y) {
+function placeBeltNode(belt, x, y) {
   const beltStore = useBeltStore();
   const in_dir = beltStore.nodeDir[belt.type].in;
   const out_dir = beltStore.nodeDir[belt.type].out;
   placeBelt(belt, x, y, in_dir, out_dir);
 }
 
-function rotateNode(belt) {
+function rotateBeltNode(belt) {
   const beltStore = useBeltStore();
   let temp_in = [];
   let temp_out = [];
@@ -64,7 +78,7 @@ function rotateNode(belt) {
 function rotateBelt(belt) {
   const beltStore = useBeltStore();
   if (beltStore.nodeTypes.has(belt.type)) {
-    belt = rotateNode(belt);
+    belt = rotateBeltNode(belt);
     return belt;
   }
   belt.in = beltStore.rotateMap[belt.in];
@@ -317,9 +331,9 @@ function deleteBatchBelt(belt) {
 export {
   createBelt,
   placeBelt,
-  placeNode,
+  placeBeltNode,
   rotateBelt,
-  rotateNode,
+  rotateBeltNode,
   rotateBeltByCenter,
   deleteBelt,
   placeBatchBelt,

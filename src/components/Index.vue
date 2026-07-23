@@ -12,12 +12,21 @@ import {
 import {
   placeBelt,
   createBelt,
-  placeNode,
+  placeBeltNode,
   rotateBelt,
   placeBatchBelt,
   deleteBatchBelt,
   deleteBelt,
 } from "../core_sub/Belt.js";
+import {
+  placePipe,
+  createPipe,
+  placePipeNode,
+  rotatePipe,
+  placeBatchPipe,
+  deleteBatchPipe,
+} from "../core_sub/Pipe.js";
+
 import { initIndicator } from "../core_sub/Indicator.js";
 import {
   drawBatchMask,
@@ -51,8 +60,8 @@ onMounted(() => {
   const machine = createMachine("testType4");
   const rotate_machine = rotateMachine(machine);
   placeMachine(rotate_machine, 4, 4);
-  const belt = createBelt("cross");
-  placeNode(belt, 7, 8);
+  const pipe = createPipe("merge");
+  placePipeNode(pipe, 7, 8);
   //const rotate_belt = rotateBelt(belt);
   //placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
   //const choose_belt = getBeltByPosition(7, 8);

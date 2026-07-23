@@ -65,11 +65,12 @@ function onStartPlace() {
   function handleFirstClick(event) {
     const beltType = getBeltByPosition(event.gridX, event.gridY)?.type;
     const pipeType = getPipeByPosition(event.gridX, event.gridY)?.type;
-    const maskType = getMachineMaskTypeByPosition(event.gridX, event.gridY);
-
+    const maskTypeRaw = getMachineMaskTypeByPosition(event.gridX, event.gridY);
+    const maskType = maskTypeRaw ? maskTypeRaw.split(".")[0] : undefined;
+    const maskDir = maskTypeRaw ? maskTypeRaw.split(".")[1] : undefined;
     const is_node =
-      (beltType != null && beltType != "default") ||
-      (pipeType != null && pipeType != "default");
+      (S.nowPlaceIsBelt && beltType != null && beltType != "default") ||
+      (!S.nowPlaceIsBelt && pipeType != null && pipeType != "default");
     if (is_node) {
       skip_first = true;
       skip_first_scan = true;
@@ -97,7 +98,8 @@ function onStartPlace() {
 
     const beltType = getBeltByPosition(event.gridX, event.gridY)?.type;
     const pipeType = getPipeByPosition(event.gridX, event.gridY)?.type;
-    const maskType = getMachineMaskTypeByPosition(event.gridX, event.gridY);
+    const maskTypeRaw = getMachineMaskTypeByPosition(event.gridX, event.gridY);
+    const maskType = maskTypeRaw ? maskTypeRaw.split(".")[0] : undefined;
 
     const config = {
       skip_first,
@@ -108,13 +110,15 @@ function onStartPlace() {
       final_offsetY: 0,
     };
 
-    if (beltType != null || pipeType != null) {
-      if (!detectOnPlaceFinalIsNode(S.base_grid_x, S.base_grid_y, event.gridX, event.gridY, S.pipeOrBeltMode)) return null;
+    // 只检查同种类型的 node
+    const hasSameTypeNode = S.nowPlaceIsBelt ? beltType != null : pipeType != null;
+    if (hasSameTypeNode) {
+      if (!detectOnPlaceFinalIsNode(S.base_grid_x, S.base_grid_y, event.gridX, event.gridY, S.pipeOrBeltMode, S.nowPlaceIsBelt)) return null;
       config.skip_last = true;
     }
 
     if (maskType != null) {
-      const { offsetX, offsetY, dir } = scanAdjacentPort(event.gridX, event.gridY, true);
+      const { offsetX, offsetY, dir } = scanAdjacentPort(event.gridX, event.gridY);
       if (dir == null) return null;
       const belt_inner = S.nowPlaceIsBelt && maskType == "bi";
       const pipe_inner = !S.nowPlaceIsBelt && maskType == "pi";
@@ -161,6 +165,8 @@ function onStartPlace() {
     S.base_grid_x = event.gridX;
     S.base_grid_y = event.gridY;
     console.log(useStorageStore().conveyorLocations);
+    console.log(useStorageStore().pipeLocations);
+    console.log(useStorageStore().machineLocations);
   }
 
   const onmousedown = (event) => {
@@ -198,7 +204,7 @@ function onStartPlace() {
       skip_first_scan,
     );
     generateConflictMask(
-      detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt),
+      detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt, S.base_grid_x, S.base_grid_y, S.now_grid_x, S.now_grid_y, S.pipeOrBeltMode),
     );
   };
   if (!S.queue.mousedown[arguments[0]]) {
@@ -238,7 +244,7 @@ function onStartPlaceChangeMode() {
     S.pipeOrBeltMode,
   );
   generateConflictMask(
-    detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt),
+    detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt, S.base_grid_x, S.base_grid_y, S.now_grid_x, S.now_grid_y, S.pipeOrBeltMode),
   );
 }
 

@@ -31,6 +31,20 @@ function createPipe(typename) {
 function placePipe(pipe, x, y, in_dir, out_dir, is_copy = false) {
   // 如果是复制操作，生成新的 id
   if (is_copy) pipe.id = nanoid();
+
+  // 交叉检测：当前位置已有直线 default 管且方向垂直，替换为 cross
+  if (pipe.type === "default") {
+    const existing = getPipeByPosition(x, y);
+    if (existing && existing.type === "default" && existing.in === existing.out) {
+      const vDirs = new Set(["up", "down"]);
+      if (vDirs.has(in_dir) !== vDirs.has(existing.in)) {
+        deletePipe(existing);
+        placePipeNode(createPipe("cross"), x, y);
+        return;
+      }
+    }
+  }
+
   pipe.gridX = x;
   pipe.gridY = y;
   pipe.in = in_dir;
@@ -39,8 +53,34 @@ function placePipe(pipe, x, y, in_dir, out_dir, is_copy = false) {
   savePipe(pipe, drawPipe(pipe));
 }
 
+function placePipeNode(pipe, x, y) {
+  const pipeStore = usePipeStore();
+  const in_dir = pipeStore.nodeDir[pipe.type].in;
+  const out_dir = pipeStore.nodeDir[pipe.type].out;
+  placePipe(pipe, x, y, in_dir, out_dir);
+}
+
+function rotatePipeNode(pipe) {
+  const pipeStore = usePipeStore();
+  let temp_in = [];
+  let temp_out = [];
+  for (let dir of pipe.in.split("|")) {
+    temp_in.push(pipeStore.rotateMap[dir]);
+  }
+  for (let dir of pipe.out.split("|")) {
+    temp_out.push(pipeStore.rotateMap[dir]);
+  }
+  pipe.in = temp_in.join("|");
+  pipe.out = temp_out.join("|");
+  return pipe;
+}
+
 function rotatePipe(pipe) {
   const pipeStore = usePipeStore();
+  if (pipeStore.nodeTypes.has(pipe.type)) {
+    pipe = rotatePipeNode(pipe);
+    return pipe;
+  }
   pipe.in = pipeStore.rotateMap[pipe.in];
   pipe.out = pipeStore.rotateMap[pipe.out];
   return pipe;
@@ -291,7 +331,9 @@ function deleteBatchPipe(pipe) {
 export {
   createPipe,
   placePipe,
+  placePipeNode,
   rotatePipe,
+  rotatePipeNode,
   rotatePipeByCenter,
   deletePipe,
   placeBatchPipe,
