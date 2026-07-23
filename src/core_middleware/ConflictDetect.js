@@ -35,7 +35,6 @@ function detectOnPlaceFinalIsNode(baseGridX, baseGridY, endX, endY, pipeOrBeltMo
 
   // 只检查同种类型的 entity
   const entity = is_belt ? getBeltByPosition(endX, endY) : getPipeByPosition(endX, endY);
-  console.log(entity);
   if (!entity) return false;
 
   const inDirs = entity.type === "cross"
