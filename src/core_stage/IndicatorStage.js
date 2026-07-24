@@ -1,7 +1,7 @@
 import { indicatorContainer } from "./SimStage";
 import { IndicatorGraphic } from "../core_graphic/IndicatorGraphic.js";
 import { SelectGraphic } from "../core_graphic/SelectGraphic.js";
-import { HoverGraphic } from "../core_graphic/hoverGraphic.js";
+import { HoverGraphic } from "../core_graphic/HoverGraphic.js";
 import { scanGridByPixel } from "../core_middleware/GridRegistry.js";
 
 //一个Cube的遮罩指示
