@@ -1,7 +1,10 @@
 import { useStorageStore } from "../stores/StorageStore.js";
+import { useMachineStore } from "../stores/MachineStore.js";
 import {
+  createMachine,
   deleteMachine,
   placeMachine,
+  rotateMachine,
   rotateMachineByCenter,
 } from "./Machine.js";
 import {
@@ -16,16 +19,12 @@ import {
   rotatePipeByCenter,
   placeBatchPipe,
 } from "./Pipe.js";
-import {
-  drawMaskFromPosition,
-  drawMaskSelectArea,
-  drawMachineMask,
-  drawBeltMask,
-  drawPipeMask,
-} from "../core_stage/IndicatorStage.js";
+import { handleDragEnd, handleDragStart, handleDragMove } from "./Drag.js";
 import {
   detectOnPlaceBatch,
   detectOnPlaceFinalIsNode,
+  detectOnPlaceMachine,
+  checkMachineBounds,
 } from "../core_middleware/ConflictDetect.js";
 import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore.js";
 import {
@@ -44,14 +43,73 @@ import {
   rebuildIfSelectMoving,
   moveMasksToOffset,
   setSelectBaseCenterPixel,
+  setBaseGrid,
+  setNowGrid,
+  hasConflict,
+  setPlaceIndicatorVisible,
+  setPlaceIndicatorAlpha,
+  setPlaceMode,
+  togglePipeOrBeltMode,
+  setSelectMoving,
+  setPlacingMachineType,
+  setPreMachine,
   generateConflictMask,
+  drawMaskFromPosition,
+  drawMaskSelectArea,
+  drawMachineMask,
+  drawBeltMask,
+  drawPipeMask,
+  drawSpecialMask,
 } from "../core_middleware/IndicatorState.js";
+import {
+  getLeftTopPosition,
+  getMachineByPosition,
+} from "../core_storage/MachineStorage.js";
+import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { getPipeByPosition } from "../core_storage/PipeStorage.js";
 import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
 
+// 长按检测 — 一定时间内无松开则进入选中移动模式
+let _longPressTimer = null;
+function _cancelLongPress() {
+  if (_longPressTimer !== null) {
+    clearTimeout(_longPressTimer);
+    _longPressTimer = null;
+  }
+}
+
+function _startLongPress(gridX, gridY) {
+  _cancelLongPress();
+  const longPressDuration = 300; // ms
+  if (S.isSelectMoving) return;
+  _longPressTimer = setTimeout(() => {
+    _longPressTimer = null;
+    const machine = getMachineByPosition(gridX, gridY);
+    if (!machine) return;
+
+    S.metaBackup = { machines: {}, belts: {}, pipes: {} };
+    S.metaRotateMove = { machines: {}, belts: {}, pipes: {} };
+    S.selectGraphics = { machines: {}, belts: {}, pipes: {} };
+
+    S.selectGraphics.machines[machine.id] = drawSpecialMask(
+      { gridX: machine.gridX, gridY: machine.gridY },
+      { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
+      machine.anchor[machine.rotation],
+      false
+    );
+    S.metaBackup.machines[machine.id] = { ...machine };
+    S.metaRotateMove.machines[machine.id] = { ...machine };
+
+    const commandStore = useCommandStore();
+    commandStore.select_command = "SELECT";
+
+    onStartSelectMove();
+  }, longPressDuration);
+}
+
 function onStartPlace() {
-  S.placeIndicator.visible = true;
+  setPlaceIndicatorVisible(true);
   let start_direction = null;
   let final_direction = null;
   let skip_first = false;
@@ -74,26 +132,28 @@ function onStartPlace() {
     if (is_node) {
       skip_first = true;
       skip_first_scan = true;
-    };
+    }
 
     if (maskType != null) {
       if (S.nowPlaceIsBelt && maskType !== "bo") return false;
       if (!S.nowPlaceIsBelt && maskType !== "po") return false;
-      const { offsetX, offsetY, dir } = scanAdjacentPort(event.gridX, event.gridY, false);
+      const { offsetX, offsetY, dir } = scanAdjacentPort(
+        event.gridX,
+        event.gridY,
+        false,
+      );
       if (dir == null) return false;
       start_direction = dir;
-      S.base_grid_x = event.gridX + offsetX;
-      S.base_grid_y = event.gridY + offsetY;
+      setBaseGrid(event.gridX + offsetX, event.gridY + offsetY);
       return true;
     }
 
-    S.base_grid_x = event.gridX;
-    S.base_grid_y = event.gridY;
+    setBaseGrid(event.gridX, event.gridY);
     return true;
   }
 
   function validateEndClick(event) {
-    if (S.conflictGraphics.length > 0) return null;
+    if (hasConflict()) return null;
     skip_first_scan = true;
 
     const beltType = getBeltByPosition(event.gridX, event.gridY)?.type;
@@ -111,14 +171,29 @@ function onStartPlace() {
     };
 
     // 只检查同种类型的 node
-    const hasSameTypeNode = S.nowPlaceIsBelt ? beltType != null : pipeType != null;
+    const hasSameTypeNode = S.nowPlaceIsBelt
+      ? beltType != null
+      : pipeType != null;
     if (hasSameTypeNode) {
-      if (!detectOnPlaceFinalIsNode(S.base_grid_x, S.base_grid_y, event.gridX, event.gridY, S.pipeOrBeltMode, S.nowPlaceIsBelt)) return null;
+      if (
+        !detectOnPlaceFinalIsNode(
+          S.base_grid_x,
+          S.base_grid_y,
+          event.gridX,
+          event.gridY,
+          S.pipeOrBeltMode,
+          S.nowPlaceIsBelt,
+        )
+      )
+        return null;
       config.skip_last = true;
     }
 
     if (maskType != null) {
-      const { offsetX, offsetY, dir } = scanAdjacentPort(event.gridX, event.gridY);
+      const { offsetX, offsetY, dir } = scanAdjacentPort(
+        event.gridX,
+        event.gridY,
+      );
       if (dir == null) return null;
       const belt_inner = S.nowPlaceIsBelt && maskType == "bi";
       const pipe_inner = !S.nowPlaceIsBelt && maskType == "pi";
@@ -137,7 +212,10 @@ function onStartPlace() {
     if (S.nowPlaceIsBelt) {
       final_direction = placeBatchBelt(
         { startX: S.base_grid_x, startY: S.base_grid_y },
-        { endX: S.now_grid_x + config.final_offsetX, endY: S.now_grid_y + config.final_offsetY },
+        {
+          endX: S.now_grid_x + config.final_offsetX,
+          endY: S.now_grid_y + config.final_offsetY,
+        },
         start_direction || final_direction,
         config.real_final_direction,
         S.pipeOrBeltMode,
@@ -147,7 +225,10 @@ function onStartPlace() {
     } else {
       final_direction = placeBatchPipe(
         { startX: S.base_grid_x, startY: S.base_grid_y },
-        { endX: S.now_grid_x + config.final_offsetX, endY: S.now_grid_y + config.final_offsetY },
+        {
+          endX: S.now_grid_x + config.final_offsetX,
+          endY: S.now_grid_y + config.final_offsetY,
+        },
         start_direction || final_direction,
         config.real_final_direction,
         S.pipeOrBeltMode,
@@ -162,8 +243,7 @@ function onStartPlace() {
     }
 
     resetTempVariables();
-    S.base_grid_x = event.gridX;
-    S.base_grid_y = event.gridY;
+    setBaseGrid(event.gridX, event.gridY);
     console.log(useStorageStore().conveyorLocations);
     console.log(useStorageStore().pipeLocations);
     console.log(useStorageStore().machineLocations);
@@ -189,8 +269,7 @@ function onStartPlace() {
       S.base_grid_y,
       S.pipeOrBeltMode,
     );
-    S.now_grid_x = process_grid_x;
-    S.now_grid_y = process_grid_y;
+    setNowGrid(process_grid_x, process_grid_y);
     S.indicatorGraphics = drawMaskFromPosition(
       {
         startX: S.base_grid_x,
@@ -204,7 +283,15 @@ function onStartPlace() {
       skip_first_scan,
     );
     generateConflictMask(
-      detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt, S.base_grid_x, S.base_grid_y, S.now_grid_x, S.now_grid_y, S.pipeOrBeltMode),
+      detectOnPlaceBatch(
+        S.indicatorGraphics,
+        S.nowPlaceIsBelt,
+        S.base_grid_x,
+        S.base_grid_y,
+        S.now_grid_x,
+        S.now_grid_y,
+        S.pipeOrBeltMode,
+      ),
     );
   };
   if (!S.queue.mousedown[arguments[0]]) {
@@ -217,21 +304,128 @@ function onStartPlace() {
 
 function onStartPlaceBelt(name) {
   onCancel();
-  S.placeIndicator.visible = true;
-  S.nowPlaceIsBelt = true;
+  setPlaceIndicatorVisible(true);
+  setPlaceMode(true);
   onStartPlace();
 }
 
 function onStartPlacePipe(name) {
   onCancel();
-  S.placeIndicator.visible = true;
-  S.nowPlaceIsBelt = false;
+  setPlaceIndicatorVisible(true);
+  setPlaceMode(false);
   onStartPlace();
+}
+
+function onStartPlaceMachine(typeName) {
+  const machineStore = useMachineStore();
+  const storageStore = useStorageStore();
+
+  setPlaceIndicatorVisible(false);
+
+  const type = machineStore.machineTypes[typeName];
+  if (!type) return;
+  const pre_machine = createMachine(typeName);
+  setPlacingMachineType(typeName);
+  setPreMachine(pre_machine);
+
+  const onmousemove = (event) => {
+    refreshIndicator();
+    refreshConflictIndicator();
+    const gx = event.gridX;
+    const gy = event.gridY;
+    const { conflict: boundsConflict } = checkMachineBounds(
+      pre_machine,
+      gx,
+      gy,
+    );
+
+    // 检测与已有实体的冲突并绘制冲突 mask
+    const metaConflict = detectOnPlaceMachine(gx, gy, typeName, pre_machine);
+    const entityConflict =
+      Object.keys(metaConflict.machines).length > 0 ||
+      Object.keys(metaConflict.belts).length > 0 ||
+      Object.keys(metaConflict.pipes).length > 0;
+    if (entityConflict) generateConflictMask(metaConflict);
+
+    setNowGrid(gx, gy);
+    S.indicatorGraphics = [
+      drawSpecialMask(
+        { gridX: gx, gridY: gy },
+        {
+          gridWidth: pre_machine.gridWidth,
+          gridHeight: pre_machine.gridHeight,
+        },
+        pre_machine.anchor[pre_machine.rotation],
+        boundsConflict || entityConflict,
+      ),
+    ];
+  };
+
+  const onmousedown = (event) => {
+    const gx = event.gridX;
+    const gy = event.gridY;
+    const { conflict: boundsConflict } = checkMachineBounds(
+      pre_machine,
+      gx,
+      gy,
+    );
+    const metaConflict = detectOnPlaceMachine(gx, gy, typeName, pre_machine);
+    const entityConflict =
+      Object.keys(metaConflict.machines).length > 0 ||
+      Object.keys(metaConflict.belts).length > 0 ||
+      Object.keys(metaConflict.pipes).length > 0;
+
+    if (boundsConflict || entityConflict) return;
+
+    placeMachine(S.pre_machine, gx, gy);
+    setBaseGrid(null, null);
+    setNowGrid(null, null);
+    onCancel();
+  };
+
+  S.queue.mousemove = {};
+  S.queue.mousedown = {};
+  S.queue.mousemove[typeName] = onmousemove;
+  S.queue.mousedown[typeName] = onmousedown;
+}
+
+function onStartPlaceMachineRotate() {
+  const pre = S.pre_machine;
+  if (!pre || !S.placingMachineType) return;
+
+  rotateMachine(pre);
+
+  const gx = S.now_grid_x;
+  const gy = S.now_grid_y;
+  if (gx == null || gy == null) return;
+
+  const { conflict: boundsConflict } = checkMachineBounds(pre, gx, gy);
+
+  // 重新检测实体冲突
+  const metaConflict = detectOnPlaceMachine(gx, gy, S.placingMachineType, pre);
+  const entityConflict =
+    Object.keys(metaConflict.machines).length > 0 ||
+    Object.keys(metaConflict.belts).length > 0 ||
+    Object.keys(metaConflict.pipes).length > 0;
+
+  refreshIndicator();
+  refreshConflictIndicator();
+  if (entityConflict) generateConflictMask(metaConflict);
+  setNowGrid(gx, gy);
+
+  S.indicatorGraphics = [
+    drawSpecialMask(
+      { gridX: gx, gridY: gy },
+      { gridWidth: pre.gridWidth, gridHeight: pre.gridHeight },
+      pre.anchor[pre.rotation],
+      boundsConflict || entityConflict,
+    ),
+  ];
 }
 
 function onStartPlaceChangeMode() {
   refreshIndicator();
-  S.pipeOrBeltMode = !S.pipeOrBeltMode;
+  togglePipeOrBeltMode();
   S.indicatorGraphics = drawMaskFromPosition(
     {
       startX: S.base_grid_x,
@@ -244,7 +438,15 @@ function onStartPlaceChangeMode() {
     S.pipeOrBeltMode,
   );
   generateConflictMask(
-    detectOnPlaceBatch(S.indicatorGraphics, S.nowPlaceIsBelt, S.base_grid_x, S.base_grid_y, S.now_grid_x, S.now_grid_y, S.pipeOrBeltMode),
+    detectOnPlaceBatch(
+      S.indicatorGraphics,
+      S.nowPlaceIsBelt,
+      S.base_grid_x,
+      S.base_grid_y,
+      S.now_grid_x,
+      S.now_grid_y,
+      S.pipeOrBeltMode,
+    ),
   );
 }
 
@@ -337,7 +539,7 @@ function onStartSelectMove(name, is_copy = false) {
     return;
   }
 
-  S.isSelectMoving = true;
+  setSelectMoving(true);
 
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
@@ -372,7 +574,7 @@ function onStartSelectMove(name, is_copy = false) {
     const gridDeltaX = Math.round(pixelDeltaX / cellWidth);
     const gridDeltaY = Math.round(pixelDeltaY / cellHeight);
     // 检查是否冲突
-    if (S.conflictGraphics.length > 0) {
+    if (hasConflict()) {
       console.log("PLACE CONFLICT");
       return;
     }
@@ -403,7 +605,7 @@ function onStartSelectMove(name, is_copy = false) {
         is_copy,
       );
     });
-    S.isSelectMoving = false;
+    setSelectMoving(false);
     onCancel();
   };
   S.queue.mousemove[name] = onmousemove;
@@ -411,6 +613,7 @@ function onStartSelectMove(name, is_copy = false) {
 }
 
 function onStartSelectRotate(name) {
+  if (!S.isSelectMoving) return;
   let set = new Set();
   // 清除所有的selectGraphics
   refreshSelectIndicator();
@@ -465,28 +668,48 @@ function onCancel() {
   refreshIndicatorPosition();
   refreshHandleQueue();
   rebuildIfSelectMoving();
-  S.placeIndicator.visible = false;
+  setPlaceIndicatorVisible(false);
+  S.placingMachineType = null;
   const commandStore = useCommandStore();
   commandStore.last_command = CMD_DEFAULT;
   commandStore.select_command = CMD_DEFAULT;
 }
 
 function onMouseMove(event) {
+  _cancelLongPress();
   placeIndicatorHandle(event);
+  if (!S.isSelectMoving) {
+    handleDragMove(event);
+  }
   Object.values(S.queue.mousemove).forEach((item) => item(event));
 }
 
 function onMouseDown(event) {
+  handleDragStart(event);
   Object.values(S.queue.mousedown).forEach((item) => item(event));
+  _startLongPress(event.gridX, event.gridY);
 }
 
 function onMouseUp(event) {
+  _cancelLongPress();
+  handleDragEnd(event);
   Object.values(S.queue.mouseup).forEach((item) => item(event));
+}
+
+function onMouseOut(event) {
+  _cancelLongPress();
+  setPlaceIndicatorAlpha(0);
+  onMouseUp(event);
+}
+
+function onMouseOver(event) {
+  setPlaceIndicatorAlpha(1);
 }
 
 export {
   onStartPlaceBelt,
   onStartPlacePipe,
+  onStartPlaceMachine,
   onStartSelect,
   onCancel,
   onStartSelectMove,
@@ -494,6 +717,7 @@ export {
   onStartSelectDelete,
   onStartPlaceChangeMode,
   onStartSelectCopy,
+  onStartPlaceMachineRotate,
 };
-export { onMouseMove, onMouseDown, onMouseUp };
+export { onMouseMove, onMouseDown, onMouseUp, onMouseOut, onMouseOver };
 export { initIndicator };

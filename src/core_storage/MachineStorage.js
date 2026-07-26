@@ -1,12 +1,15 @@
 import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 import { useStorageStore } from "../stores/StorageStore.js";
+import { useMachineStore } from "../stores/MachineStore.js";
 
 // 映射机器区域
 function mapMachineArea(machine, func, use_center = false) {
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
-  const {leftTopX, leftTopY} = use_center ? getLeftTopPositionByCenter(machine) : getLeftTopPosition(machine);
+  const { leftTopX, leftTopY } = use_center
+    ? getLeftTopPositionByCenter(machine)
+    : getLeftTopPosition(machine);
   const originX = Number.parseInt(leftTopX);
   const originY = Number.parseInt(leftTopY);
   const startGridX = Number.parseInt(originX / cellWidth);
@@ -14,6 +17,18 @@ function mapMachineArea(machine, func, use_center = false) {
   for (let i = 0; i < machine.gridWidth; i++) {
     for (let j = 0; j < machine.gridHeight; j++) {
       func(startGridX + i, startGridY + j, machine.mask[j][i]);
+    }
+  }
+}
+
+// 通过机器类型映射机器区域，不过没有偏移量
+function mapMachineAreaWithType(machine_type, func) {
+  const machineStore = useMachineStore();
+  const machine = machineStore.machineTypes[machine_type];
+  if (!machine) return;
+  for (let i = 0; i < machine.gridWidth; i++) {
+    for (let j = 0; j < machine.gridHeight; j++) {
+      func(i, j, machine.mask[j][i]);
     }
   }
 }
@@ -122,7 +137,7 @@ function saveMachine(machine, machine_container) {
   mapMachineArea(machine, (x, y, maskType) => {
     storageStore.machineLocations[y][x] = `${machine.id}.${maskType}`;
   });
-  //console.log(storageStore.machineLocations); 
+  //console.log(storageStore.machineLocations);
 }
 
 // 删除机器
@@ -144,4 +159,7 @@ export {
   getMachineGridPosition,
   getMachineMaskTypeByPosition,
   mapMachineArea,
+  mapMachineAreaWithType,
+  getLeftTopPosition,
+  getMachinePixelSize,
 };

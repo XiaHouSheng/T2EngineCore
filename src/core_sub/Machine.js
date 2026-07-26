@@ -1,7 +1,6 @@
 import { saveMachine, dropMachine, getMachineGridPosition } from "../core_storage/MachineStorage.js";
 import { drawMachine, dropDrawMachine } from "../core_stage/MachineStage.js";
 import { useMachineStore } from "../stores/MachineStore.js";
-import { detectOnPlaceMachine } from "../core_middleware/ConflictDetect.js";
 import { nanoid } from "nanoid";
 /**
  * 创建机器
@@ -31,8 +30,7 @@ import { nanoid } from "nanoid";
 // 创建机器
 function createMachine(typename) {
   const machineStore = useMachineStore();
-  const { gridWidth, gridHeight, anchor, mask } =
-    machineStore.machineTypes[typename];
+  const { gridWidth, gridHeight, anchor, mask } = machineStore.machineTypes[typename];
   const machine = {};
   machine.id = nanoid();
   machine.type = typename;
@@ -50,7 +48,6 @@ function placeMachine(machine, x, y, is_copy = false) {
   if (is_copy) machine.id = nanoid();
   machine.gridX = x;
   machine.gridY = y;
-  detectOnPlaceMachine(machine);
   saveMachine(machine, drawMachine(machine));
   return machine;
 }

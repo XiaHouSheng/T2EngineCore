@@ -136,7 +136,6 @@ function drawBeltMask(belts, now_keys, is_conflict = false) {
   Object.keys(belts).forEach((key) => {
     if (now_keys.has(key)) return;
     const belt = belts[key];
-    console.log()
     const mask = drawMask(
       { gridX: belt.gridX, gridY: belt.gridY },
       is_conflict,

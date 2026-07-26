@@ -1,20 +1,47 @@
 import { Graphics } from "pixi.js";
-import { onMouseMove, onMouseDown, onMouseUp } from "../core_sub/Indicator.js";
-import { backgroundContainer, indicatorContainer } from "./SimStage.js";
+import { onWheelChange } from "../core_sub/Scale.js";
+import {
+  onMouseMove,
+  onMouseDown,
+  onMouseUp,
+  onMouseOut,
+  onMouseOver,
+} from "../core_sub/Indicator.js";
+import {
+  backgroundContainer,
+  indicatorContainer,
+  viewportContainer,
+} from "./SimStage.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 import {
   pixelToGrid,
   pixelToGridNoneOffset,
 } from "../core_middleware/PositionConvert.js";
 
+let storageStore = null;
+
+// 代理函数，用于event的坐标补偿
+function proxyProcessPositionWithScale(event) {
+  if (!storageStore) storageStore = useStorageStore();
+  const { x: offsetX, y: offsetY } = storageStore.offset_position;
+  const scale = storageStore.scale;
+  event.client.x = (event.client.x - offsetX) / scale;
+  event.client.y = (event.client.y - offsetY) / scale;
+  const grid_position = pixelToGridNoneOffset(event.client.x, event.client.y);
+  const result = {
+    ...event,
+    ...grid_position,
+  };
+  return result;
+}
+
 function drawGridLines() {
   const grid = new Graphics();
-  const stageStore = useStorageStore();
-
-  const row = stageStore.rowCount;
-  const col = stageStore.colCount;
-  const width = stageStore.width;
-  const height = stageStore.height;
+  if (!storageStore) storageStore = useStorageStore();
+  const row = storageStore.rowCount;
+  const col = storageStore.colCount;
+  const width = storageStore.width;
+  const height = storageStore.height;
   const gridWidth = width / col;
   const gridHeight = height / row;
 
@@ -37,9 +64,9 @@ function drawGridLines() {
 }
 
 function drawHitArea() {
-  const stageStore = useStorageStore();
-  const width = stageStore.width;
-  const height = stageStore.height;
+  if (!storageStore) storageStore = useStorageStore();
+  const width = storageStore.width;
+  const height = storageStore.height;
   const hitArea = new Graphics({
     eventMode: "static",
   })
@@ -47,28 +74,27 @@ function drawHitArea() {
     .fill({ alpha: 0.0001 });
   indicatorContainer.addChild(hitArea);
   hitArea.on("pointerdown", (event) => {
-    const grid_position = pixelToGridNoneOffset(event.x, event.y);
-    const result = {
-      ...event,
-      ...grid_position,
-    };
+    const result = proxyProcessPositionWithScale(event);
     onMouseDown(result);
   });
   hitArea.on("pointerup", (event) => {
-    const grid_position = pixelToGridNoneOffset(event.x, event.y);
-    const result = {
-      ...event,
-      ...grid_position,
-    };
+    const result = proxyProcessPositionWithScale(event);
     onMouseUp(result);
   });
   hitArea.on("pointermove", (event) => {
-    const grid_position = pixelToGridNoneOffset(event.x, event.y);
-    const result = {
-      ...event,
-      ...grid_position,
-    };
+    const result = proxyProcessPositionWithScale(event);
     onMouseMove(result);
+  });
+  hitArea.on("pointerout", (event) => {
+    const result = proxyProcessPositionWithScale(event);
+    onMouseOut(result);
+  });
+  hitArea.on("pointerover", (event) => {
+    const result = proxyProcessPositionWithScale(event);
+    onMouseOver(result);
+  });
+  hitArea.on("wheel", (event) => {
+    onWheelChange(event);
   });
 }
 

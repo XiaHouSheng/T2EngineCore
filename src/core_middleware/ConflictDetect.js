@@ -1,22 +1,81 @@
-import { useStorageStore } from "../stores/StorageStore.js";
 import {
   mapMachineArea,
+  mapMachineAreaWithType,
   getMachineByPosition,
   getMachineMaskTypeByPosition,
+  getLeftTopPosition,
 } from "../core_storage/MachineStorage.js";
 import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { getPipeByPosition } from "../core_storage/PipeStorage.js";
+import { useMachineStore } from "../stores/MachineStore.js";
+import { useStorageStore } from "../stores/StorageStore.js";
+import { pixelToGridNoneOffset } from "./PositionConvert.js";
 
-function detectOnPlaceMachine(machine) {
+
+function detectOnPlaceMachine(grid_x, grid_y, machineType, usePreMachine) {
+  const metaConflict = {
+    machines: {},
+    belts: {},
+    pipes: {},
+  };
   const storageStore = useStorageStore();
+
+  let tempMachine;
+  if (usePreMachine) {
+    // 使用传入的 pre_machine（支持旋转后的尺寸/锚点）
+    tempMachine = {
+      x: (grid_x - 0.5) * storageStore.cellWidth,
+      y: (grid_y - 0.5) * storageStore.cellHeight,
+      gridWidth: usePreMachine.gridWidth,
+      gridHeight: usePreMachine.gridHeight,
+      anchor: usePreMachine.anchor,
+      rotation: usePreMachine.rotation,
+      mask: usePreMachine.mask,
+    };
+  } else {
+    const machineStore = useMachineStore();
+    const type = machineStore.machineTypes[machineType];
+    if (!type) return metaConflict;
+    tempMachine = {
+      x: (grid_x - 0.5) * storageStore.cellWidth,
+      y: (grid_y - 0.5) * storageStore.cellHeight,
+      gridWidth: type.gridWidth,
+      gridHeight: type.gridHeight,
+      anchor: type.anchor,
+      rotation: 0,
+      mask: type.mask,
+    };
+  }
+
+  mapMachineArea(tempMachine, (x, y) => {
+    const gx = x + 1;
+    const gy = y + 1;
+    const machine = getMachineByPosition(gx, gy);
+    const belt = getBeltByPosition(gx, gy);
+    const pipe = getPipeByPosition(gx, gy);
+    if (machine) metaConflict.machines[machine.id] = machine;
+    if (belt) metaConflict.belts[belt.id] = belt;
+    if (pipe) metaConflict.pipes[pipe.id] = pipe;
+  });
+
+  return metaConflict;
 }
 
-function detectOnPlacePipe(machine) {
+// 检查机器放置位置是否超出边界
+function checkMachineBounds(pre_machine, gx, gy) {
   const storageStore = useStorageStore();
-}
+  const cellWidth = storageStore.cellWidth;
+  const cellHeight = storageStore.cellHeight;
+  const colCount = storageStore.colCount;
+  const rowCount = storageStore.rowCount;
 
-function detectOnPlaceBelt(machine) {
-  const storageStore = useStorageStore();
+  pre_machine.x = (gx - 0.5) * cellWidth;
+  pre_machine.y = (gy - 0.5) * cellHeight;
+  const { leftTopX, leftTopY } = getLeftTopPosition(pre_machine);
+  const { gridX: leftGX, gridY: leftGY } = pixelToGridNoneOffset(leftTopX, leftTopY);
+  const xOk = leftGX >= 1 && leftGX + pre_machine.gridWidth - 1 <= colCount;
+  const yOk = leftGY >= 1 && leftGY + pre_machine.gridHeight - 1 <= rowCount;
+  return { conflict: !(xOk && yOk), leftGX, leftGY };
 }
 
 function detectOnPlaceFinalIsNode(baseGridX, baseGridY, endX, endY, pipeOrBeltMode, is_belt = true) {
@@ -261,8 +320,7 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true, baseX = 0, baseY 
 
 export {
   detectOnPlaceMachine,
-  detectOnPlacePipe,
-  detectOnPlaceBelt,
+  checkMachineBounds,
   detectOnMoveMask,
   detectOnPlaceBatch,
   detectOnHoverMachine,

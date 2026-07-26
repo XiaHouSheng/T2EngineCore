@@ -6,9 +6,7 @@ import {
   dropPipe,
   findPipeNearBy,
   getPipeByPosition,
-} from "../core_storage/PipeStorage.js";
-import { detectOnPlacePipe } from "../core_middleware/ConflictDetect.js";
-import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
+} from "../core_storage/PipeStorage.js";import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 /**
  * @param {
  *  id: string,
@@ -49,7 +47,6 @@ function placePipe(pipe, x, y, in_dir, out_dir, is_copy = false) {
   pipe.gridY = y;
   pipe.in = in_dir;
   pipe.out = out_dir;
-  detectOnPlacePipe(pipe);
   savePipe(pipe, drawPipe(pipe));
 }
 

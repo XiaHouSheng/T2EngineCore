@@ -5,13 +5,16 @@ export const useStorageStore = defineStore("StorageStore", () => {
   // 场景配置
   const width = ref(800);
   const height = ref(800);
-  const scale = ref(1);
   const backgroundColor = ref(0xffffff);
   const rowCount = ref(20);
   const colCount = ref(20);
   const cellWidth = computed(() => width.value / colCount.value);
   const cellHeight = computed(() => height.value / rowCount.value);
-
+  // 缩放比例以及偏移量
+  const scale = ref(1);
+  const offset_position = ref({ x: 0, y: 0 });
+  const max_offset = ref(160);
+  const base_step = ref(20);
   // 机器存储
   const machines = ref({}); // id -> meta
   const machineObjects = markRaw({}); // id -> object
@@ -63,6 +66,9 @@ export const useStorageStore = defineStore("StorageStore", () => {
     cellWidth,
     cellHeight,
     scale,
+    offset_position,
+    max_offset,
+    base_step,
     backgroundColor,
     rowCount,
     colCount,

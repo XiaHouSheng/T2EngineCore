@@ -28,17 +28,20 @@ import {
 } from "../core_sub/Pipe.js";
 
 import { initIndicator } from "../core_sub/Indicator.js";
+import { dispatchPlaceMachineHandle } from "../core_middleware/KeyboardHandle.js";
+import { S } from "../core_middleware/IndicatorState.js";
 import {
   drawBatchMask,
   drawMaskFromPosition,
   drawSpecialMask,
 } from "../core_stage/IndicatorStage.js";
-import { handleKeyboard } from "../core_middleware/KeyboardHandle.js";
+import { handleKeyboard, handleKeyboardForZoom } from "../core_middleware/KeyboardHandle.js";
 import {
   findBeltNearBy,
   getBeltByPosition,
 } from "../core_storage/BeltStorage.js";
 import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
+import { initLoader } from "../core_loader/index.js";
 const storageStore = useStorageStore();
 const canvas = ref(null);
 
@@ -57,42 +60,28 @@ const canvas = ref(null);
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeyboard);
+  window.addEventListener("keydown", handleKeyboardForZoom);
   const machine = createMachine("testType4");
   const rotate_machine = rotateMachine(machine);
   placeMachine(rotate_machine, 4, 4);
   const pipe = createPipe("merge");
   placePipeNode(pipe, 7, 8);
-  //const rotate_belt = rotateBelt(belt);
-  //placeBatchBelt({ startX: 7, startY: 7 }, { endX: 10, endY: 10 });
-  //const choose_belt = getBeltByPosition(7, 8);
-  //const belts = findBeltNearBy(choose_belt);
-  /*
-  drawSpecialMask(
-    {gridX: 4, gridY: 4},
-    {gridWidth: machine.gridWidth, gridHeight: machine.gridHeight},
-    machine.anchor[machine.rotation]
-  )
-  drawBatchMask(belts.map(belt => ({gridX: belt.gridX, gridY: belt.gridY})))
-  console.log(drawMaskFromPosition({
-    startX: 8,
-    startY: 1,
-  },{
-    endX: 10,
-    endY: 1,
-  }, false))
-  */
 });
 
 onUnmounted(() => {
   app.destroy();
   window.removeEventListener("keydown", handleKeyboard);
+  window.removeEventListener("keydown", handleKeyboardForZoom);
 });
 </script>
 
 <template>
   <div ref="canvas"></div>
   <div>
-    <button>Place Machine</button>
+    <button
+      :style="{ background: S.placingMachineType === 'testType4' ? '#446' : '' }"
+      @click="dispatchPlaceMachineHandle('testType4', 'place_machine')"
+    >Place Machine</button>
     <button>Place Belt</button>
     <button>Delete Belt</button>
     <button>Delete Machine</button>

@@ -4,11 +4,11 @@ import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { useBeltStore } from "../stores/BeltStore.js";
 import { usePipeStore } from "../stores/PipeStore.js";
 
-function proxyForHandle(func, name) {
+function proxyForHandle(func, name, time_ = 300) {
   let lastCall = 0;
   return function () {
     const now = Date.now();
-    if (now - lastCall < 300) return;
+    if (now - lastCall < time_) return;
     lastCall = now;
     func(name.toLowerCase());
     console.log(name);

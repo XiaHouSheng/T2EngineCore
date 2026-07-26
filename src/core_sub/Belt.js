@@ -7,7 +7,6 @@ import {
   findBeltNearBy,
   getBeltByPosition,
 } from "../core_storage/BeltStorage.js";
-import { detectOnPlaceBelt } from "../core_middleware/ConflictDetect.js";
 import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 /**
  * @param {
@@ -49,7 +48,6 @@ function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
   belt.gridY = y;
   belt.in = in_dir;
   belt.out = out_dir;
-  detectOnPlaceBelt(belt);
   saveBelt(belt, drawBelt(belt));
 }
 

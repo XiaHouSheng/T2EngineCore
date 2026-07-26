@@ -22,7 +22,7 @@ import {
 } from "./ConflictDetect.js";
 import { pixelToGridNoneOffset } from "./PositionConvert.js";
 // === 状态 ===
-export const S = {
+const S = {
   pipeOrBeltMode: true,
   isSelectMoving: false,
   nowPlaceIsBelt: true,
@@ -48,6 +48,8 @@ export const S = {
   now_pixel_y: null,
 
   queue: { mousedown: {}, mouseup: {}, mousemove: {} },
+  placingMachineType: null,
+  pre_machine: null,
 };
 
 // === 可视化控制 ===
@@ -199,7 +201,51 @@ function generateConflictMask(metaConflict) {
   S.conflictGraphics = drawConflictMaskOnMove(metaConflict);
 }
 
+// === 状态访问封装 ===
+function setPlacingMachineType(type) {
+  S.placingMachineType = type;
+}
+
+function setPreMachine(m) {
+  S.pre_machine = m;
+}
+
+function setBaseGrid(x, y) {
+  S.base_grid_x = x;
+  S.base_grid_y = y;
+}
+
+function setNowGrid(x, y) {
+  S.now_grid_x = x;
+  S.now_grid_y = y;
+}
+
+function hasConflict() {
+  return S.conflictGraphics.length > 0;
+}
+
+function setPlaceIndicatorVisible(v) {
+  S.placeIndicator.visible = v;
+}
+
+function setPlaceIndicatorAlpha(a) {
+  S.placeIndicator.alpha = a;
+}
+
+function setPlaceMode(isBelt) {
+  S.nowPlaceIsBelt = isBelt;
+}
+
+function togglePipeOrBeltMode() {
+  S.pipeOrBeltMode = !S.pipeOrBeltMode;
+}
+
+function setSelectMoving(v) {
+  S.isSelectMoving = v;
+}
+
 export {
+  S,
   initIndicator,
   placeIndicatorHandle,
   refreshIndicator,
@@ -211,4 +257,24 @@ export {
   moveMasksToOffset,
   setSelectBaseCenterPixel,
   generateConflictMask,
+  setBaseGrid,
+  setNowGrid,
+  hasConflict,
+  setPlaceIndicatorVisible,
+  setPlaceIndicatorAlpha,
+  setPlaceMode,
+  togglePipeOrBeltMode,
+  setSelectMoving,
+  setPlacingMachineType,
+  setPreMachine,
 };
+
+// 转发 IndicatorStage 的 draw 函数，避免 Indicator.js 直接依赖 Stage 层
+export {
+  drawMaskFromPosition,
+  drawMaskSelectArea,
+  drawMachineMask,
+  drawBeltMask,
+  drawPipeMask,
+  drawSpecialMask,
+} from "../core_stage/IndicatorStage.js";
