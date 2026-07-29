@@ -11,19 +11,26 @@ import {
   deleteBelt,
   placeBelt,
   rotateBeltByCenter,
+  createBeltNode,
   placeBatchBelt,
+  placeBeltNode,
+  rotateBeltNode,
 } from "./Belt.js";
 import {
   deletePipe,
   placePipe,
   rotatePipeByCenter,
+  createPipeNode,
   placeBatchPipe,
+  placePipeNode,
+  rotatePipeNode,
 } from "./Pipe.js";
 import { handleDragEnd, handleDragStart, handleDragMove } from "./Drag.js";
 import {
   detectOnPlaceBatch,
   detectOnPlaceFinalIsNode,
   detectOnPlaceMachine,
+  detectOnPlaceNode,
   checkMachineBounds,
 } from "../core_middleware/ConflictDetect.js";
 import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore.js";
@@ -52,7 +59,9 @@ import {
   togglePipeOrBeltMode,
   setSelectMoving,
   setPlacingMachineType,
+  setNowPlaceNodeType,
   setPreMachine,
+  setPreNode,
   generateConflictMask,
   drawMaskFromPosition,
   drawMaskSelectArea,
@@ -60,6 +69,7 @@ import {
   drawBeltMask,
   drawPipeMask,
   drawSpecialMask,
+  drawMask,
 } from "../core_middleware/IndicatorState.js";
 import {
   getLeftTopPosition,
@@ -96,7 +106,7 @@ function _startLongPress(gridX, gridY) {
       { gridX: machine.gridX, gridY: machine.gridY },
       { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
       machine.anchor[machine.rotation],
-      false
+      false,
     );
     S.metaBackup.machines[machine.id] = { ...machine };
     S.metaRotateMove.machines[machine.id] = { ...machine };
@@ -187,6 +197,7 @@ function onStartPlace() {
       )
         return null;
       config.skip_last = true;
+      config.end_is_port_or_node = true;
     }
 
     if (maskType != null) {
@@ -250,10 +261,13 @@ function onStartPlace() {
   }
 
   const onmousedown = (event) => {
+    const storageStore = useStorageStore();
     if (S.base_grid_x == null || S.base_grid_y == null) {
       handleFirstClick(event);
       return;
     }
+    if (S.now_grid_x < 1 || S.now_grid_x > storageStore.colCount) return;
+    if (S.now_grid_y < 1 || S.now_grid_y > storageStore.rowCount) return;
     const config = validateEndClick(event);
     if (!config) return;
     executePlace(event, config);
@@ -316,9 +330,95 @@ function onStartPlacePipe(name) {
   onStartPlace();
 }
 
+function onStartPlaceNode(typeName, is_belt = true) {
+  setNowPlaceNodeType(typeName);
+  S.nowPlaceIsBelt = is_belt;
+
+  // 预创建节点对象，用于预览和旋转
+  if (is_belt) {
+    S.pre_node = createBeltNode(typeName);
+  } else {
+    S.pre_node = createPipeNode(typeName);
+  }
+
+  const onmousemove = (event) => {
+    refreshIndicator();
+    refreshConflictIndicator();
+    setNowGrid(event.gridX, event.gridY);
+
+    const metaConflict = detectOnPlaceNode(event.gridX, event.gridY, is_belt);
+    const entityConflict =
+      Object.keys(metaConflict.machines).length > 0 ||
+      Object.keys(metaConflict.belts).length > 0 ||
+      Object.keys(metaConflict.pipes).length > 0;
+    if (entityConflict) generateConflictMask(metaConflict);
+
+    S.indicatorGraphics = [
+      drawMask(
+        { gridX: event.gridX, gridY: event.gridY },
+        entityConflict,
+        S.pre_node,
+      ),
+    ];
+  };
+
+  const onmousedown = (event) => {
+    const storageStore = useStorageStore();
+    const gx = event.gridX;
+    const gy = event.gridY;
+
+    if (gx < 1 || gx > storageStore.colCount) return;
+    if (gy < 1 || gy > storageStore.rowCount) return;
+
+    const metaConflict = detectOnPlaceNode(gx, gy, is_belt);
+    const entityConflict =
+      Object.keys(metaConflict.machines).length > 0 ||
+      Object.keys(metaConflict.belts).length > 0 ||
+      Object.keys(metaConflict.pipes).length > 0;
+    if (entityConflict) return;
+    if (S.nowPlaceIsBelt) {
+      placeBeltNode(S.pre_node, gx, gy);
+    } else {
+      placePipeNode(S.pre_node, gx, gy);
+    }
+
+    onCancel();
+  };
+
+  S.queue.mousemove = {};
+  S.queue.mousedown = {};
+  S.queue.mousemove[typeName] = onmousemove;
+  S.queue.mousedown[typeName] = onmousedown;
+}
+
+function onStartPlaceNodeRotate() {
+  if (!S.pre_node) return;
+  if (S.nowPlaceIsBelt) {
+    setPreNode(rotateBeltNode(S.pre_node));
+  } else {
+    setPreNode(rotatePipeNode(S.pre_node));
+  }
+  const metaConflict = detectOnPlaceNode(
+    S.now_grid_x,
+    S.now_grid_y,
+    S.nowPlaceIsBelt,
+  );
+  const entityConflict =
+    Object.keys(metaConflict.machines).length > 0 ||
+    Object.keys(metaConflict.belts).length > 0 ||
+    Object.keys(metaConflict.pipes).length > 0;
+  refreshIndicator();
+  S.indicatorGraphics = [
+    drawMask(
+      { gridX: S.now_grid_x, gridY: S.now_grid_y },
+      entityConflict,
+      S.pre_node,
+    ),
+  ];
+}
+
 function onStartPlaceMachine(typeName) {
   const machineStore = useMachineStore();
-  const storageStore = useStorageStore();
 
   setPlaceIndicatorVisible(false);
 
@@ -338,7 +438,7 @@ function onStartPlaceMachine(typeName) {
       gx,
       gy,
     );
-
+    setNowGrid(gx, gy);
     // 检测与已有实体的冲突并绘制冲突 mask
     const metaConflict = detectOnPlaceMachine(gx, gy, typeName, pre_machine);
     const entityConflict =
@@ -347,7 +447,6 @@ function onStartPlaceMachine(typeName) {
       Object.keys(metaConflict.pipes).length > 0;
     if (entityConflict) generateConflictMask(metaConflict);
 
-    setNowGrid(gx, gy);
     S.indicatorGraphics = [
       drawSpecialMask(
         { gridX: gx, gridY: gy },
@@ -357,6 +456,7 @@ function onStartPlaceMachine(typeName) {
         },
         pre_machine.anchor[pre_machine.rotation],
         boundsConflict || entityConflict,
+        S.pre_machine,
       ),
     ];
   };
@@ -419,6 +519,7 @@ function onStartPlaceMachineRotate() {
       { gridWidth: pre.gridWidth, gridHeight: pre.gridHeight },
       pre.anchor[pre.rotation],
       boundsConflict || entityConflict,
+      pre,
     ),
   ];
 }
@@ -670,6 +771,8 @@ function onCancel() {
   rebuildIfSelectMoving();
   setPlaceIndicatorVisible(false);
   S.placingMachineType = null;
+  S.nowPlaceNodeType = null;
+  S.pre_node = null;
   const commandStore = useCommandStore();
   commandStore.last_command = CMD_DEFAULT;
   commandStore.select_command = CMD_DEFAULT;
@@ -718,6 +821,8 @@ export {
   onStartPlaceChangeMode,
   onStartSelectCopy,
   onStartPlaceMachineRotate,
+  onStartPlaceNode,
+  onStartPlaceNodeRotate,
 };
 export { onMouseMove, onMouseDown, onMouseUp, onMouseOut, onMouseOver };
 export { initIndicator };

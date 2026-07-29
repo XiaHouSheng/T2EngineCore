@@ -52,9 +52,19 @@ function placePipe(pipe, x, y, in_dir, out_dir, is_copy = false) {
 
 function placePipeNode(pipe, x, y) {
   const pipeStore = usePipeStore();
-  const in_dir = pipeStore.nodeDir[pipe.type].in;
-  const out_dir = pipeStore.nodeDir[pipe.type].out;
+  const in_dir = pipe.in || pipeStore.nodeDir[pipe.type].in;
+  const out_dir = pipe.out || pipeStore.nodeDir[pipe.type].out;
   placePipe(pipe, x, y, in_dir, out_dir);
+}
+
+function createPipeNode(type) {
+  const pipeStore = usePipeStore();
+  const pipe = createPipe(type);
+  const in_dir = pipeStore.nodeDir[type].in;
+  const out_dir = pipeStore.nodeDir[type].out;
+  pipe.in = in_dir;
+  pipe.out = out_dir;
+  return pipe;
 }
 
 function rotatePipeNode(pipe) {
@@ -327,6 +337,7 @@ function deleteBatchPipe(pipe) {
 
 export {
   createPipe,
+  createPipeNode,
   placePipe,
   placePipeNode,
   rotatePipe,

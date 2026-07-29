@@ -10,6 +10,8 @@ import {
   onStartPlaceChangeMode,
   onStartSelectCopy,
   onStartPlaceMachineRotate,
+  onStartPlaceNode,
+  onStartPlaceNodeRotate,
   onCancel,
 } from "../core_sub/Indicator.js";
 import {
@@ -33,6 +35,7 @@ export const useCommandStore = defineStore("command", () => {
     f: "DELETE",
     copy: "COPY",
     place_machine: "PLACE_MACHINE",
+    place_node: "PLACE_NODE",
     w: "ZOOM_TOP",
     s: "ZOOM_BOTTOM",
     a: "ZOOM_LEFT",
@@ -44,6 +47,7 @@ export const useCommandStore = defineStore("command", () => {
     x: "SELECT",
     escape: "CANCEL",
     place_machine: "PLACE_MACHINE",
+    place_node: "PLACE_NODE",
   });
   const keyboard_sub_command = markRaw({
     m: "MOVE",
@@ -59,6 +63,7 @@ export const useCommandStore = defineStore("command", () => {
     CANCEL: onCancel,
     // 组合命令
     PLACE_MACHINE_ROTATE: onStartPlaceMachineRotate,
+    PLACE_NODE_ROTATE: onStartPlaceNodeRotate,
     PLACE_BELT_ROTATE: onStartPlaceChangeMode,
     PLACE_PIPE_ROTATE: onStartPlaceChangeMode,
     SELECT_MOVE: onStartSelectMove,

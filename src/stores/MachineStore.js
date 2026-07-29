@@ -1,15 +1,16 @@
 import { defineStore } from "pinia";
 import { markRaw } from "vue";
 
-// 默认 fallback，当 machines.json 加载失败时使用
 const DEFAULT_TYPES = {
   testType4: {
+    name: "测试机器",
     gridWidth: 5,
     gridHeight: 4,
     anchor: [
       { x: 0.5, y: 0.375 },
       { x: 0.375, y: 0.5 },
     ],
+    recipe_id: ["phase_trans_1-liquid_copper"],
     mask: [
       ["bi.down", "bi.down", "bi.down", "bi.down", "bi.down"],
       ["pi.right", "ma", "ma", "ma", "po.right"],
@@ -22,14 +23,20 @@ const DEFAULT_TYPES = {
 export const useMachineStore = defineStore("machineStore", () => {
   const machineTypes = markRaw({ ...DEFAULT_TYPES });
 
-  function setMachineTypes(types) {
-    // 清除旧数据后注入新数据
-    Object.keys(machineTypes).forEach((k) => delete machineTypes[k]);
-    Object.assign(machineTypes, types);
+  /**
+   * 从外部配置向 machineTypes 注入机器定义（anchor / mask 等）
+   * @param {Record<string, object>} configMap - machines_1_4.json 的完整对象
+   * @param {string[]} blacklist - 要跳过的机器 key 列表
+   */
+  function injectFromConfig(configMap, blacklist = []) {
+    for (const [key, cfg] of Object.entries(configMap)) {
+      if (blacklist.includes(key)) continue;
+      machineTypes[key] = cfg;
+    }
   }
 
   return {
     machineTypes,
-    setMachineTypes,
+    injectFromConfig,
   };
 });

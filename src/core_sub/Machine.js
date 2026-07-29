@@ -30,15 +30,11 @@ import { nanoid } from "nanoid";
 // 创建机器
 function createMachine(typename) {
   const machineStore = useMachineStore();
-  const { gridWidth, gridHeight, anchor, mask } = machineStore.machineTypes[typename];
-  const machine = {};
+  const machine = { ...machineStore.machineTypes[typename] };
   machine.id = nanoid();
   machine.type = typename;
   machine.rotation = 0;
-  machine.anchor = anchor;
-  machine.gridWidth = gridWidth;
-  machine.gridHeight = gridHeight;
-  machine.mask = mask;
+  machine.portOffsetIndex = 0; // 4 个旋转状态的指针
   return machine;
 }
 
@@ -76,6 +72,8 @@ function rotateMachine(machine) {
   machine.gridWidth = rows;
   machine.gridHeight = cols;
   machine.rotation = machine.rotation === 0 ? 1 : 0;
+  // port 偏移指针右移（4 个旋转状态循环）
+  machine.portOffsetIndex = ((machine.portOffsetIndex ?? 0) + 1) % 4;
   return machine;
 }
 

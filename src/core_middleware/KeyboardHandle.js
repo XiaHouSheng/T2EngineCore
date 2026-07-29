@@ -3,7 +3,7 @@ import {
   CMD_DEFAULT,
   CMD_CANCEL,
 } from "../stores/KeyBoardStore.js";
-import { onStartPlaceMachine } from "../core_sub/Indicator.js";
+import { onStartPlaceMachine, onStartPlaceNode } from "../core_sub/Indicator.js";
 
 let commandStore = null;
 
@@ -11,6 +11,12 @@ function dispatchPlaceMachineHandle(typeName, key) {
   if (!commandStore) commandStore = useCommandStore();
   handleKeyboard({ key: key.toLowerCase() });
   onStartPlaceMachine(typeName);
+}
+
+function dispatchPlaceNodeHandle(typeName, key, is_belt = true) {
+  if (!commandStore) commandStore = useCommandStore();
+  handleKeyboard({ key: key.toLowerCase() });
+  onStartPlaceNode(typeName, is_belt);
 }
 
 function handleKeyboardForZoom(event) {
@@ -80,4 +86,4 @@ function handleKeyboard(keyboardEvent) {
   }
 }
 
-export { handleKeyboard, handleKeyboardForZoom, dispatchPlaceMachineHandle };
+export { handleKeyboard, handleKeyboardForZoom, dispatchPlaceMachineHandle, dispatchPlaceNodeHandle };

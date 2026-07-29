@@ -50,6 +50,8 @@ const S = {
   queue: { mousedown: {}, mouseup: {}, mousemove: {} },
   placingMachineType: null,
   pre_machine: null,
+  nowPlaceNodeType: null, // 放置节点时记录 node 类型（split/merge/cross/default）
+  pre_node: null, // 预创建的单节点对象（belt/pipe），用于预览和旋转
 };
 
 // === 可视化控制 ===
@@ -191,7 +193,6 @@ function setSelectBaseCenterPixel(metaBackup, storageStore) {
     (max_x + min_x) / 2,
     (max_y + min_y) / 2,
   );
-  console.log(gridX, gridY);
   S.base_pixel_x = gridX * cellWidth;
   S.base_pixel_y = gridY * cellHeight;
 }
@@ -206,8 +207,16 @@ function setPlacingMachineType(type) {
   S.placingMachineType = type;
 }
 
+function setNowPlaceNodeType(type) {
+  S.nowPlaceNodeType = type;
+}
+
 function setPreMachine(m) {
   S.pre_machine = m;
+}
+
+function setPreNode(n) {
+  S.pre_node = n;
 }
 
 function setBaseGrid(x, y) {
@@ -266,11 +275,14 @@ export {
   togglePipeOrBeltMode,
   setSelectMoving,
   setPlacingMachineType,
+  setNowPlaceNodeType,
   setPreMachine,
+  setPreNode,
 };
 
 // 转发 IndicatorStage 的 draw 函数，避免 Indicator.js 直接依赖 Stage 层
 export {
+  drawMask,
   drawMaskFromPosition,
   drawMaskSelectArea,
   drawMachineMask,

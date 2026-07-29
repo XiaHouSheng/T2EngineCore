@@ -27,6 +27,16 @@ function createBelt(typename) {
   return belt;
 }
 
+function createBeltNode(type) {
+  const beltStore = useBeltStore();
+  const belt = createBelt(type);
+  const in_dir = beltStore.nodeDir[type].in;
+  const out_dir = beltStore.nodeDir[type].out;
+  belt.in = in_dir;
+  belt.out = out_dir;
+  return belt;
+}
+
 function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
   // 如果是复制操作，生成新的 id
   if (is_copy) belt.id = nanoid();
@@ -53,8 +63,8 @@ function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
 
 function placeBeltNode(belt, x, y) {
   const beltStore = useBeltStore();
-  const in_dir = beltStore.nodeDir[belt.type].in;
-  const out_dir = beltStore.nodeDir[belt.type].out;
+  const in_dir = belt.in || beltStore.nodeDir[belt.type].in;
+  const out_dir = belt.out || beltStore.nodeDir[belt.type].out;
   placeBelt(belt, x, y, in_dir, out_dir);
 }
 
@@ -328,6 +338,7 @@ function deleteBatchBelt(belt) {
 
 export {
   createBelt,
+  createBeltNode,
   placeBelt,
   placeBeltNode,
   rotateBelt,

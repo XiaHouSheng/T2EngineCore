@@ -11,7 +11,6 @@ import { useMachineStore } from "../stores/MachineStore.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 import { pixelToGridNoneOffset } from "./PositionConvert.js";
 
-
 function detectOnPlaceMachine(grid_x, grid_y, machineType, usePreMachine) {
   const metaConflict = {
     machines: {},
@@ -72,13 +71,23 @@ function checkMachineBounds(pre_machine, gx, gy) {
   pre_machine.x = (gx - 0.5) * cellWidth;
   pre_machine.y = (gy - 0.5) * cellHeight;
   const { leftTopX, leftTopY } = getLeftTopPosition(pre_machine);
-  const { gridX: leftGX, gridY: leftGY } = pixelToGridNoneOffset(leftTopX, leftTopY);
+  const { gridX: leftGX, gridY: leftGY } = pixelToGridNoneOffset(
+    leftTopX,
+    leftTopY,
+  );
   const xOk = leftGX >= 1 && leftGX + pre_machine.gridWidth - 1 <= colCount;
   const yOk = leftGY >= 1 && leftGY + pre_machine.gridHeight - 1 <= rowCount;
   return { conflict: !(xOk && yOk), leftGX, leftGY };
 }
 
-function detectOnPlaceFinalIsNode(baseGridX, baseGridY, endX, endY, pipeOrBeltMode, is_belt = true) {
+function detectOnPlaceFinalIsNode(
+  baseGridX,
+  baseGridY,
+  endX,
+  endY,
+  pipeOrBeltMode,
+  is_belt = true,
+) {
   let finalDir;
   if (baseGridX === endX) {
     finalDir = endY > baseGridY ? "down" : "up";
@@ -93,17 +102,27 @@ function detectOnPlaceFinalIsNode(baseGridX, baseGridY, endX, endY, pipeOrBeltMo
   }
 
   // 只检查同种类型的 entity
-  const entity = is_belt ? getBeltByPosition(endX, endY) : getPipeByPosition(endX, endY);
+  const entity = is_belt
+    ? getBeltByPosition(endX, endY)
+    : getPipeByPosition(endX, endY);
   if (!entity) return false;
 
-  const inDirs = entity.type === "cross"
-    ? ["up", "down", "left", "right"]
-    : entity.in.split("|");
+  const inDirs =
+    entity.type === "cross"
+      ? ["up", "down", "left", "right"]
+      : entity.in.split("|");
 
   return inDirs.includes(finalDir);
 }
 
-function detectOnPlaceFinalIsPort(baseGridX, baseGridY, endX, endY, pipeOrBeltMode, is_belt = true) {
+function detectOnPlaceFinalIsPort(
+  baseGridX,
+  baseGridY,
+  endX,
+  endY,
+  pipeOrBeltMode,
+  is_belt = true,
+) {
   let finalDir;
   if (baseGridX === endX) {
     finalDir = endY > baseGridY ? "down" : "up";
@@ -129,26 +148,38 @@ function detectOnPlaceFinalIsPort(baseGridX, baseGridY, endX, endY, pipeOrBeltMo
 }
 
 function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
+  const { machines, belts, pipes } = metaRotateMove;
+  const storageStore = useStorageStore();
+  const colCount = storageStore.colCount;
+  const rowCount = storageStore.rowCount;
+
   //machine cannot overlap with belt or pipe
   const metaConflict = {
     machines: {},
     belts: {},
     pipes: {},
   };
-  const { machines, belts, pipes } = metaRotateMove;
   // Check if machine area overlaps with belt/pipe
   Object.values(machines).forEach((machine) => {
     mapMachineArea(
       machine,
       (x, y, maskType) => {
         // rotation may make machine.x/y stale, always use centerX/Y
-        const belt = getBeltByPosition(x + gridDeltaX + 1, y + gridDeltaY + 1);
-        const pipe = getPipeByPosition(x + gridDeltaX + 1, y + gridDeltaY + 1);
+        const newX = x + gridDeltaX + 1;
+        const newY = y + gridDeltaY + 1;
+        const belt = getBeltByPosition(newX, newY);
+        const pipe = getPipeByPosition(newX, newY);
         if (belt) {
           metaConflict.belts[belt.id] = belt;
         }
         if (pipe) {
           metaConflict.pipes[pipe.id] = pipe;
+        }
+        if (newX < 1 || newX > colCount) {
+          metaConflict.machines[machine.id] = machine;
+        }
+        if (newY < 1 || newY > rowCount) {
+          metaConflict.machines[machine.id] = machine;
         }
       },
       true,
@@ -156,35 +187,44 @@ function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
   });
   // Check if belt/pipe area overlaps with machine/belt/pipe
   Object.values(belts).forEach((belt) => {
-    const machine = getMachineByPosition(
-      belt.gridX + gridDeltaX,
-      belt.gridY + gridDeltaY,
-    );
-    const belt_ = getBeltByPosition(
-      belt.gridX + gridDeltaX,
-      belt.gridY + gridDeltaY,
-    );
+    const newX = belt.gridX + gridDeltaX;
+    const newY = belt.gridY + gridDeltaY;
+    const machine = getMachineByPosition(newX, newY);
+    const belt_ = getBeltByPosition(newX, newY);
+    const pipe_ = getPipeByPosition(newX, newY);
     if (machine) {
       metaConflict.machines[machine.id] = machine;
     }
     if (belt_) {
       metaConflict.belts[belt_.id] = belt_;
     }
+    if (pipe_ && pipe_.type != "default") {
+      metaConflict.pipes[pipe_.id] = pipe_;
+    }
+    if (newX < 1 || newX > colCount) {
+      metaConflict.belts[belt.id] = belt;
+    }
+    if (newY < 1 || newY > rowCount) {
+      metaConflict.belts[belt.id] = belt;
+    }
   });
   Object.values(pipes).forEach((pipe) => {
-    const machine = getMachineByPosition(
-      pipe.gridX + gridDeltaX + 1,
-      pipe.gridY + gridDeltaY + 1,
-    );
-    const pipe_ = getPipeByPosition(
-      pipe.gridX + gridDeltaX + 1,
-      pipe.gridY + gridDeltaY + 1,
-    );
+    const newX = pipe.gridX + gridDeltaX;
+    const newY = pipe.gridY + gridDeltaY;
+    console.log(newX, newY)
+    const machine = getMachineByPosition(newX, newY);
+    const pipe_ = getPipeByPosition(newX, newY);
     if (machine) {
       metaConflict.machines[machine.id] = machine;
     }
     if (pipe_) {
       metaConflict.pipes[pipe_.id] = pipe_;
+    }
+    if (newX < 1 || newX > colCount) {
+      metaConflict.pipes[pipe.id] = pipe;
+    }
+    if (newY < 1 || newY > rowCount) {
+      metaConflict.pipes[pipe.id] = pipe;
     }
   });
   return metaConflict;
@@ -205,6 +245,7 @@ function detectOnHoverBelt(gridX, gridY) {
   }
   return null;
 }
+
 function detectOnHoverPipe(gridX, gridY) {
   const pipe = getPipeByPosition(gridX, gridY);
   if (pipe) {
@@ -224,27 +265,51 @@ function getPlaceDirAt(gridX, gridY, baseX, baseY, nowX, nowY, pipeOrBeltMode) {
   const crossY = pipeOrBeltMode ? nowY : baseY;
   if (pipeOrBeltMode) {
     // 第一段：垂直
-    if (gridX === baseX && gridY >= Math.min(baseY, crossY) && gridY <= Math.max(baseY, crossY)) {
+    if (
+      gridX === baseX &&
+      gridY >= Math.min(baseY, crossY) &&
+      gridY <= Math.max(baseY, crossY)
+    ) {
       return nowY > baseY ? "down" : "up";
     }
     // 第二段：水平
-    if (gridY === crossY && gridX >= Math.min(crossX, nowX) && gridX <= Math.max(crossX, nowX)) {
+    if (
+      gridY === crossY &&
+      gridX >= Math.min(crossX, nowX) &&
+      gridX <= Math.max(crossX, nowX)
+    ) {
       return nowX > crossX ? "right" : "left";
     }
   } else {
     // 第一段：水平
-    if (gridY === baseY && gridX >= Math.min(baseX, crossX) && gridX <= Math.max(baseX, crossX)) {
+    if (
+      gridY === baseY &&
+      gridX >= Math.min(baseX, crossX) &&
+      gridX <= Math.max(baseX, crossX)
+    ) {
       return nowX > baseX ? "right" : "left";
     }
     // 第二段：垂直
-    if (gridX === crossX && gridY >= Math.min(crossY, nowY) && gridY <= Math.max(crossY, nowY)) {
+    if (
+      gridX === crossX &&
+      gridY >= Math.min(crossY, nowY) &&
+      gridY <= Math.max(crossY, nowY)
+    ) {
       return nowY > crossY ? "down" : "up";
     }
   }
   return null;
 }
 
-function detectOnPlaceBatch(indicatorGraphics, is_belt = true, baseX = 0, baseY = 0, nowX = 0, nowY = 0, pipeOrBeltMode = true) {
+function detectOnPlaceBatch(
+  indicatorGraphics,
+  is_belt = true,
+  baseX = 0,
+  baseY = 0,
+  nowX = 0,
+  nowY = 0,
+  pipeOrBeltMode = true,
+) {
   const metaConflict = {
     machines: {},
     belts: {},
@@ -252,23 +317,24 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true, baseX = 0, baseY 
   };
   for (let i = 0; i < indicatorGraphics.length; i++) {
     const graphic = indicatorGraphics[i];
-    const machine = getMachineByPosition(
-      graphic.gridX,
-      graphic.gridY,
-    );
-    const belt_ = getBeltByPosition(
-      graphic.gridX,
-      graphic.gridY,
-    );
-    const pipe_ = getPipeByPosition(
-      graphic.gridX,
-      graphic.gridY,
-    );
+    const machine = getMachineByPosition(graphic.gridX, graphic.gridY);
+    const belt_ = getBeltByPosition(graphic.gridX, graphic.gridY);
+    const pipe_ = getPipeByPosition(graphic.gridX, graphic.gridY);
     if (machine) {
-      const maskTypeRaw = getMachineMaskTypeByPosition(graphic.gridX, graphic.gridY);
+      const maskTypeRaw = getMachineMaskTypeByPosition(
+        graphic.gridX,
+        graphic.gridY,
+      );
       const maskType = maskTypeRaw ? maskTypeRaw.split(".")[0] : undefined;
       const allowedPorts = is_belt ? ["bo", "bi"] : ["po", "pi"];
-      const detect = detectOnPlaceFinalIsPort(baseX, baseY, nowX, nowY, pipeOrBeltMode, is_belt);
+      const detect = detectOnPlaceFinalIsPort(
+        baseX,
+        baseY,
+        nowX,
+        nowY,
+        pipeOrBeltMode,
+        is_belt,
+      );
       if (!allowedPorts.includes(maskType)) {
         metaConflict.machines[machine.id] = machine;
       }
@@ -278,16 +344,37 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true, baseX = 0, baseY 
     }
     // 放置belt且该区域有belt的node时，方向匹配则放行
     if (belt_ && is_belt && belt_.type !== "default") {
-      const detect = detectOnPlaceFinalIsNode(baseX, baseY, nowX, nowY, pipeOrBeltMode, is_belt);
+      const detect = detectOnPlaceFinalIsNode(
+        baseX,
+        baseY,
+        nowX,
+        nowY,
+        pipeOrBeltMode,
+        is_belt,
+      );
       if (!detect) {
         metaConflict.belts[belt_.id] = belt_;
       }
     }
     // 放置belt且该区域已有default直线belt时，垂直方向放行由下层处理交叉
     if (belt_ && is_belt && belt_.type === "default") {
-      const newDir = getPlaceDirAt(graphic.gridX, graphic.gridY, baseX, baseY, nowX, nowY, pipeOrBeltMode);
-      if (!(newDir && belt_.in === belt_.out &&
-            (new Set(["up", "down"])).has(newDir) !== (new Set(["up", "down"])).has(belt_.in))) {
+      const newDir = getPlaceDirAt(
+        graphic.gridX,
+        graphic.gridY,
+        baseX,
+        baseY,
+        nowX,
+        nowY,
+        pipeOrBeltMode,
+      );
+      if (
+        !(
+          newDir &&
+          belt_.in === belt_.out &&
+          new Set(["up", "down"]).has(newDir) !==
+            new Set(["up", "down"]).has(belt_.in)
+        )
+      ) {
         metaConflict.belts[belt_.id] = belt_;
       }
     }
@@ -301,20 +388,78 @@ function detectOnPlaceBatch(indicatorGraphics, is_belt = true, baseX = 0, baseY 
     }
     // 放置pipe且该区域有pipe的node时，方向匹配则放行
     if (pipe_ && !is_belt && pipe_.type !== "default") {
-      const detect = detectOnPlaceFinalIsNode(baseX, baseY, nowX, nowY, pipeOrBeltMode, is_belt);
+      const detect = detectOnPlaceFinalIsNode(
+        baseX,
+        baseY,
+        nowX,
+        nowY,
+        pipeOrBeltMode,
+        is_belt,
+      );
       if (!detect) {
         metaConflict.pipes[pipe_.id] = pipe_;
       }
     }
     // 放置pipe且该区域已有default直线pipe时，垂直方向放行由下层处理交叉
     if (pipe_ && !is_belt && pipe_.type === "default") {
-      const newDir = getPlaceDirAt(graphic.gridX, graphic.gridY, baseX, baseY, nowX, nowY, pipeOrBeltMode);
-      if (!(newDir && pipe_.in === pipe_.out &&
-            (new Set(["up", "down"])).has(newDir) !== (new Set(["up", "down"])).has(pipe_.in))) {
+      const newDir = getPlaceDirAt(
+        graphic.gridX,
+        graphic.gridY,
+        baseX,
+        baseY,
+        nowX,
+        nowY,
+        pipeOrBeltMode,
+      );
+      if (
+        !(
+          newDir &&
+          pipe_.in === pipe_.out &&
+          new Set(["up", "down"]).has(newDir) !==
+            new Set(["up", "down"]).has(pipe_.in)
+        )
+      ) {
         metaConflict.pipes[pipe_.id] = pipe_;
       }
     }
   }
+  return metaConflict;
+}
+
+function detectOnPlaceNode(gridX, gridY, is_belt = true) {
+  const metaConflict = { machines: {}, belts: {}, pipes: {} };
+
+  // 机器占据该格 → 冲突
+  const machine = getMachineByPosition(gridX, gridY);
+  if (machine) {
+    metaConflict.machines[machine.id] = machine;
+  }
+
+  const belt = getBeltByPosition(gridX, gridY);
+  const pipe = getPipeByPosition(gridX, gridY);
+
+  if (is_belt) {
+    // 放置 belt node，相同位置有非 default 的 belt node → 冲突
+    if (belt && belt.type !== "default") {
+      metaConflict.belts[belt.id] = belt;
+    }
+    // 放置 belt node，相同位置有非 default 的 pipe node → 冲突
+    if (pipe && pipe.type !== "default") {
+      metaConflict.pipes[pipe.id] = pipe;
+    }
+    // default belt/pipe 由底层 cross 检测处理
+  } else {
+    // 放置 pipe node，相同位置有非 default 的 pipe node → 冲突
+    if (pipe && pipe.type !== "default") {
+      metaConflict.pipes[pipe.id] = pipe;
+    }
+    // 放置 pipe node，相同位置有非 default 的 belt node → 冲突
+    if (belt && belt.type !== "default") {
+      metaConflict.belts[belt.id] = belt;
+    }
+    // default belt/pipe 由底层 cross 检测处理
+  }
+
   return metaConflict;
 }
 
@@ -327,4 +472,5 @@ export {
   detectOnHoverBelt,
   detectOnHoverPipe,
   detectOnPlaceFinalIsNode,
+  detectOnPlaceNode,
 };

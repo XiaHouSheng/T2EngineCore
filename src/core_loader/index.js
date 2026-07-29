@@ -16,11 +16,7 @@ import { loadAllConfigs } from "./LoadConfigs.js";
 export async function initLoader() {
   console.log("[Loader] init start");
 
-  // Step 1: 加载 JSON 配置
   await loadAllConfigs();
-
-  // Step 2: 预加载图片资源（预留）
-  // await preloadAssets();
 
   console.log("[Loader] init complete");
 }

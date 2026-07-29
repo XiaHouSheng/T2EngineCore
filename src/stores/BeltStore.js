@@ -14,10 +14,10 @@ export const useBeltStore = defineStore("beltStore", () => {
     const nodeDir = markRaw({
         "split": {
             in: "down",
-            out: "left|right|down",
+            out: "left|down|right",
         },
         "merge": {
-            in: "down|left|right",
+            in: "down|right|left",
             out: "down",
         },
         "cross": {

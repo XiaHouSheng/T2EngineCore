@@ -6,8 +6,8 @@ export const useStorageStore = defineStore("StorageStore", () => {
   const width = ref(800);
   const height = ref(800);
   const backgroundColor = ref(0xffffff);
-  const rowCount = ref(20);
-  const colCount = ref(20);
+  const rowCount = ref(10);
+  const colCount = ref(10);
   const cellWidth = computed(() => width.value / colCount.value);
   const cellHeight = computed(() => height.value / rowCount.value);
   // 缩放比例以及偏移量
@@ -15,6 +15,8 @@ export const useStorageStore = defineStore("StorageStore", () => {
   const offset_position = ref({ x: 0, y: 0 });
   const max_offset = ref(160);
   const base_step = ref(20);
+  const default_pipe_port_offset = 0.125
+  const default_belt_port_offset = 0.3175
   // 机器存储
   const machines = ref({}); // id -> meta
   const machineObjects = markRaw({}); // id -> object
@@ -81,5 +83,7 @@ export const useStorageStore = defineStore("StorageStore", () => {
     pipes,
     pipeObjects,
     pipeLocations,
+    default_belt_port_offset,
+    default_pipe_port_offset,
   };
 });

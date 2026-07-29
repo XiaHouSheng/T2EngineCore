@@ -1,16 +1,1711 @@
 {
-  "testType4": {
-    "gridWidth": 5,
-    "gridHeight": 4,
+  "cmpt_mc_1": {
+    "id": "cmpt_mc_1",
+    "name": "配件机",
+    "gridWidth": 3,
+    "gridHeight": 3,
     "anchor": [
-      { "x": 0.5, "y": 0.375 },
-      { "x": 0.375, "y": 0.5 }
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
     ],
     "mask": [
-      ["bi.down", "bi.down", "bi.down", "bi.down", "bi.down"],
-      ["pi.right", "ma", "ma", "ma", "po.right"],
-      ["ma", "ma", "ma", "ma", "ma"],
-      ["bo.down", "bo.down", "bo.down", "bo.down", "bo.down"]
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "glass_cmpt",
+      "glass_enr_cmpt",
+      "iron_cmpt",
+      "iron_enr_cmpt",
+      "copper_cmpt",
+      "copper_enr_cmpt",
+      "copper_enr2_cmpt"
     ]
+  },
+  "dismantler_1": {
+    "id": "dismantler_1",
+    "name": "拆解机",
+    "gridWidth": 6,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.415,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.415
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ]
+  },
+  "filling_pd_mc_1": {
+    "id": "filling_pd_mc_1",
+    "name": "灌装机",
+    "gridWidth": 6,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.415,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.415
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "iron_bottle-liquid_plant_grass_1",
+      "iron_bottle-liquid_plant_grass_2",
+      "copper_bottle-liquid_plant_grass_1",
+      "copper_bottle-liquid_plant_grass_2",
+      "bottled_food_1",
+      "bottled_food_2",
+      "bottled_food_3",
+      "bottled_rec_hp_1",
+      "bottled_rec_hp_2",
+      "bottled_rec_hp_3"
+    ]
+  },
+  "furnance_1": {
+    "id": "furnance_1",
+    "name": "精炼炉",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "carbon_powder-plant_moss_powder_1",
+      "carbon_powder-plant_moss_powder_2",
+      "carbon_powder-plant_moss_powder_3",
+      "carbon_powder-plant_grass_powder_1",
+      "carbon_powder-plant_grass_powder_2",
+      "carbon_mtl-plant_moss_1",
+      "carbon_mtl-plant_moss_2",
+      "carbon_mtl-plant_moss_3",
+      "carbon_mtl-plant_grass_1",
+      "carbon_mtl-plant_grass_2",
+      "crystal_powder-originium_powder",
+      "crystal_shell-originium_ore",
+      "crystal_shell-crystal_powder",
+      "crystal_enr",
+      "crystal_enr_powder-originium_enr_powder",
+      "carbon_enr_powder-plant_moss_enr_powder_1",
+      "carbon_enr_powder-plant_moss_enr_powder_2",
+      "carbon_enr",
+      "quartz_glass-quartz_sand",
+      "quartz_glass-quartz_powder",
+      "quartz_enr",
+      "iron_nugget-iron_ore",
+      "iron_nugget-iron_powder",
+      "iron_enr",
+      "copper_nugget"
+    ]
+  },
+  "gas_pump_1": {
+    "id": "gas_pump_1",
+    "name": "气体收集泵",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "gas_inert",
+      "gas_xiranite"
+    ]
+  },
+  "gas_reactor_1": {
+    "id": "gas_reactor_1",
+    "name": "气体反应炉",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "gas_copper_enr2"
+    ]
+  },
+  "grinder_1": {
+    "id": "grinder_1",
+    "name": "粉碎机",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "plant_moss_powder_1",
+      "plant_moss_powder_3",
+      "plant_grass_powder_1",
+      "carbon_powder-carbon_mtl",
+      "plant_moss_powder_2",
+      "plant_bbflower_powder_1",
+      "plant_grass_powder_2",
+      "crystal_powder-crystal_shell",
+      "originium_powder",
+      "quartz_powder",
+      "iron_powder",
+      "copper_powder"
+    ]
+  },
+  "liquid_cleaner_1": {
+    "id": "liquid_cleaner_1",
+    "name": "废水处理机",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "liquid_cleaner_1-sewage",
+      "liquid_cleaner_1-xiranite_lowpoly",
+      "liquid_cleaner_1-xiranite_poly"
+    ]
+  },
+  "liquid_purifier_1": {
+    "id": "liquid_purifier_1",
+    "name": "提纯机",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "pi.left"
+      ],
+      [
+        "po.left",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "pi.left"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "liquid_copper_enr",
+      "gas_copper_enr-gas_inert",
+      "gas_copper_enr",
+      "liquid_xiranite_poly-purifier",
+      "gas_xiranite_enr",
+      "gas_xiranite_enr-gas_inert"
+    ]
+  },
+  "mix_pool_1": {
+    "id": "mix_pool_1",
+    "name": "反应池",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "liquid_plant_grass_1",
+      "liquid_plant_grass_2",
+      "copper_enr",
+      "liquid_copper",
+      "xiranite_poly",
+      "liquid_xiranite",
+      "liquid_xiranite_enr",
+      "liquid_xiranite_poly"
+    ]
+  },
+  "mix_pool_2": {
+    "id": "mix_pool_2",
+    "name": "扩容反应池",
+    "gridWidth": 6,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.415,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.415
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "liquid_plant_grass_1",
+      "liquid_plant_grass_2",
+      "copper_enr",
+      "liquid_copper",
+      "xiranite_poly",
+      "liquid_xiranite",
+      "liquid_xiranite_enr",
+      "liquid_xiranite_poly"
+    ]
+  },
+  "phase_trans_1": {
+    "id": "phase_trans_1",
+    "name": "液气转化机",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "bi.down",
+        "ma",
+        "ma"
+      ],
+      [
+        "po.left",
+        "ma",
+        "ma",
+        "ma",
+        "pi.left"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "po.left",
+        "ma",
+        "ma",
+        "ma",
+        "pi.left"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "phase_trans_1-liquid_copper",
+      "phase_trans_1-liquid_copper_enr",
+      "phase_trans_1-gas_copper",
+      "phase_trans_1-gas_copper_enr",
+      "phase_trans_1-liquid_xiranite",
+      "phase_trans_1-liquid_xiranite_enr",
+      "phase_trans_1-liquid_water",
+      "phase_trans_1-liquid_acid",
+      "phase_trans_1-gas_water",
+      "phase_trans_1-gas_xiranite",
+      "phase_trans_1-gas_xiranite_enr",
+      "phase_trans_1-gas_acid"
+    ]
+  },
+  "phase_trans_2": {
+    "id": "phase_trans_2",
+    "name": "固气转化机",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "bi.down",
+        "ma",
+        "bi.down",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "po.down",
+        "ma",
+        "po.down",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "phase_trans_2-copper_nugget",
+      "phase_trans_2-copper_enr",
+      "phase_trans_2-copper_enr2",
+      "phase_trans_2-gas_copper",
+      "phase_trans_2-gas_copper_enr",
+      "phase_trans_2-gas_copper_enr2",
+      "phase_trans_2-xiranite_powder",
+      "phase_trans_2-xiranite_enr_powder",
+      "phase_trans_2-gas_xiranite",
+      "phase_trans_2-gas_xiranite_enr"
+    ]
+  },
+  "planter_1": {
+    "id": "planter_1",
+    "name": "种植机",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "plant_moss_1",
+      "plant_moss_3",
+      "plant_grass_1",
+      "plant_moss_2",
+      "plant_bbflower_1",
+      "plant_grass_2"
+    ]
+  },
+  "power_sta_1": {
+    "id": "power_sta_1",
+    "name": "热能池",
+    "gridWidth": 2,
+    "gridHeight": 2,
+    "anchor": [
+      {
+        "x": 0.25,
+        "y": 0.25
+      },
+      {
+        "x": 0.25,
+        "y": 0.25
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "power_originium_ore",
+      "power_proc_battery_1",
+      "power_proc_battery_2",
+      "power_proc_battery_3",
+      "power_proc_battery_4",
+      "power_proc_battery_5"
+    ]
+  },
+  "seedcol_1": {
+    "id": "seedcol_1",
+    "name": "采种机",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "plant_moss_seed_1",
+      "plant_moss_seed_3",
+      "plant_grass_seed_1",
+      "plant_moss_seed_2",
+      "plant_bbflower_seed_1",
+      "plant_grass_seed_2"
+    ]
+  },
+  "shaper_1": {
+    "id": "shaper_1",
+    "name": "塑形机",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "glass_bottle",
+      "glass_enr_bottle",
+      "iron_bottle",
+      "iron_enr_bottle",
+      "copper_bottle",
+      "copper_enr_bottle",
+      "copper_jar"
+    ]
+  },
+  "thickener_1": {
+    "id": "thickener_1",
+    "name": "研磨机",
+    "gridWidth": 6,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.415,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.415
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "plant_moss_enr_powder_1",
+      "plant_moss_enr_powder_2",
+      "crystal_enr_powder-crystal_powder",
+      "originium_enr_powder",
+      "carbon_enr_powder-carbon_powder",
+      "quartz_enr_powder",
+      "iron_enr_powder"
+    ]
+  },
+  "tools_asm_mc_1": {
+    "id": "tools_asm_mc_1",
+    "name": "封装机",
+    "gridWidth": 6,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.415,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.415
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "filter_core",
+      "bottled_food_4",
+      "bottled_food_5",
+      "bottled_rec_hp_4",
+      "bottled_rec_hp_5",
+      "proc_battery_1",
+      "proc_battery_2",
+      "proc_battery_3",
+      "proc_battery_4",
+      "proc_battery_5",
+      "proc_bomb_1"
+    ]
+  },
+  "winder_1": {
+    "id": "winder_1",
+    "name": "装备原件机",
+    "gridWidth": 6,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.415,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.415
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "recipe_id": [
+      "equip_script_1",
+      "equip_script_2",
+      "equip_script_3",
+      "equip_script_4",
+      "equip_script_4_1",
+      "equip_script_4_2",
+      "equip_script_4_3"
+    ]
+  },
+  "xiranite_oven_1": {
+    "id": "xiranite_oven_1",
+    "name": "天有洪炉",
+    "gridWidth": 5,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "bi.down",
+        "ma",
+        "bi.down",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "bo.down",
+        "ma",
+        "bo.down",
+        "ma"
+      ]
+    ],
+    "recipe_id": [
+      "xiranite_powder-carbon_mtl",
+      "xiranite_powder-carbon_enr",
+      "xiranite_enr_powder"
+    ]
+  },
+  "source_pile_1": {
+    "name": "存取线源段",
+    "gridWidth": 4,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.375,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.375
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "source_pile_1"
+  },
+  "base_segment_1": {
+    "name": "存储线基段",
+    "gridWidth": 8,
+    "gridHeight": 4,
+    "anchor": [
+      {
+        "x": 0.4375,
+        "y": 0.375
+      },
+      {
+        "x": 0.375,
+        "y": 0.4375
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "base_segment_1"
+  },
+  "gas_disperser_1": {
+    "name": "气体散布机",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "pi.up",
+        "ma"
+      ]
+    ],
+    "id": "gas_disperser_1"
+  },
+  "power_pile_1": {
+    "name": "供电桩",
+    "gridWidth": 2,
+    "gridHeight": 2,
+    "anchor": [
+      {
+        "x": 0.25,
+        "y": 0.25
+      },
+      {
+        "x": 0.25,
+        "y": 0.25
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "power_pile_1"
+  },
+  "storage_box_1": {
+    "name": "协议存储箱",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "bi.down",
+        "bi.down",
+        "bi.down"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.down",
+        "bo.down",
+        "bo.down"
+      ]
+    ],
+    "id": "storage_box_1"
+  },
+  "warehouse_output_1": {
+    "name": "仓库取货口",
+    "gridWidth": 3,
+    "gridHeight": 1,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "bo.down",
+        "ma"
+      ]
+    ],
+    "id": "warehouse_output_1"
+  },
+  "warehouse_input_1": {
+    "name": "仓库存货口",
+    "gridWidth": 3,
+    "gridHeight": 1,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "bi.up",
+        "ma"
+      ]
+    ],
+    "id": "warehouse_input_1"
+  },
+  "liquid_tank_1": {
+    "name": "储液罐",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "liquid_tank_1"
+  },
+  "concealed_pipe_in_1": {
+    "name": "暗管入口",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "concealed_pipe_in_1"
+  },
+  "concealed_pipe_out": {
+    "name": "暗管出口",
+    "gridWidth": 3,
+    "gridHeight": 3,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "bo.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "concealed_pipe_out"
+  },
+  "concealed_pipe_in_muti_1": {
+    "name": "多口暗管入口",
+    "gridWidth": 3,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "pi.right",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "concealed_pipe_in_muti_1"
+  },
+  "concealed_pipe_out_muti_1": {
+    "name": "多口暗管出口",
+    "gridWidth": 3,
+    "gridHeight": 5,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "po.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma"
+      ]
+    ],
+    "id": "concealed_pipe_out_muti_1"
+  },
+  "protocol_core_1": {
+    "name": "协议核心",
+    "gridWidth": 9,
+    "gridHeight": 9,
+    "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
+      {
+        "x": 0.5,
+        "y": 0.5
+      }
+    ],
+    "mask": [
+      [
+        "ma",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "bi.down",
+        "ma"
+      ],
+      [
+        "bo.left",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "bo.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.left",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "bo.right"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma"
+      ],
+      [
+        "bo.left",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "ma",
+        "bo.right"
+      ],
+      [
+        "ma",
+        "bi.up",
+        "bi.up",
+        "bi.up",
+        "bi.up",
+        "bi.up",
+        "bi.up",
+        "bi.up",
+        "ma"
+      ]
+    ],
+    "id": "protocol_core_1"
   }
 }

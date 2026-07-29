@@ -5,15 +5,15 @@ import { HoverGraphic } from "../core_graphic/HoverGraphic.js";
 import { scanGridByPixel } from "../core_middleware/GridRegistry.js";
 
 //一个Cube的遮罩指示
-function drawMask(position, conflict = false) {
-  const mask = new IndicatorGraphic(position, undefined, undefined, conflict);
+function drawMask(position, conflict = false, pipe_or_belt_entity = null) {
+  const mask = new IndicatorGraphic(position, undefined, undefined, conflict, null,  pipe_or_belt_entity);
   indicatorContainer.addChild(mask);
   return mask;
 }
 
 //指定长宽的遮罩指示
-function  drawSpecialMask(position, size, pivot, is_conflict = false) {
-  const mask = new IndicatorGraphic(position, size, pivot, is_conflict);
+function  drawSpecialMask(position, size, pivot, is_conflict = false, machine_entity = null) {
+  const mask = new IndicatorGraphic(position, size, pivot, is_conflict, machine_entity, null);
   indicatorContainer.addChild(mask);
   return mask;
 }
