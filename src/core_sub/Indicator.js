@@ -37,6 +37,8 @@ import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore.js";
 import {
   scanAdjacentPort,
   directionConstraint,
+  makeDebouncedDelay,
+  makeClickDetector,
 } from "../core_middleware/IndicatorUtil.js";
 import {
   S,
@@ -72,50 +74,41 @@ import {
   drawMask,
 } from "../core_middleware/IndicatorState.js";
 import {
-  getLeftTopPosition,
   getMachineByPosition,
+  getMachineGridPosition,
 } from "../core_storage/MachineStorage.js";
-import { pixelToGridNoneOffset } from "../core_middleware/PositionConvert.js";
 import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { getPipeByPosition } from "../core_storage/PipeStorage.js";
 import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
+import { handleMachineClick } from "../core_middleware/EventHandle.js";
 
-// 长按检测 — 一定时间内无松开则进入选中移动模式
-let _longPressTimer = null;
-function _cancelLongPress() {
-  if (_longPressTimer !== null) {
-    clearTimeout(_longPressTimer);
-    _longPressTimer = null;
-  }
-}
+// 长按检测 — 可取消的延时调用器
+const _longPress = makeDebouncedDelay(300);
+// 点击检测器
+const _clickDetector = makeClickDetector(300);
 
-function _startLongPress(gridX, gridY) {
-  _cancelLongPress();
-  const longPressDuration = 300; // ms
+function onStartMoveMachine(gridX, gridY) {
   if (S.isSelectMoving) return;
-  _longPressTimer = setTimeout(() => {
-    _longPressTimer = null;
-    const machine = getMachineByPosition(gridX, gridY);
-    if (!machine) return;
+  const machine = getMachineByPosition(gridX, gridY);
+  if (!machine) return;
 
-    S.metaBackup = { machines: {}, belts: {}, pipes: {} };
-    S.metaRotateMove = { machines: {}, belts: {}, pipes: {} };
-    S.selectGraphics = { machines: {}, belts: {}, pipes: {} };
+  S.metaBackup = { machines: {}, belts: {}, pipes: {} };
+  S.metaRotateMove = { machines: {}, belts: {}, pipes: {} };
+  S.selectGraphics = { machines: {}, belts: {}, pipes: {} };
 
-    S.selectGraphics.machines[machine.id] = drawSpecialMask(
-      { gridX: machine.gridX, gridY: machine.gridY },
-      { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
-      machine.anchor[machine.rotation],
-      false,
-    );
-    S.metaBackup.machines[machine.id] = { ...machine };
-    S.metaRotateMove.machines[machine.id] = { ...machine };
+  S.selectGraphics.machines[machine.id] = drawSpecialMask(
+    { gridX: machine.gridX, gridY: machine.gridY },
+    { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
+    machine.anchor[machine.rotation],
+    false,
+  );
+  S.metaBackup.machines[machine.id] = { ...machine };
+  S.metaRotateMove.machines[machine.id] = { ...machine };
 
-    const commandStore = useCommandStore();
-    commandStore.select_command = "SELECT";
+  const commandStore = useCommandStore();
+  commandStore.select_command = "SELECT";
 
-    onStartSelectMove();
-  }, longPressDuration);
+  onStartSelectMove();
 }
 
 function onStartPlace() {
@@ -341,6 +334,8 @@ function onStartPlaceNode(typeName, is_belt = true) {
     S.pre_node = createPipeNode(typeName);
   }
 
+  setSelectMoving(true);
+
   const onmousemove = (event) => {
     refreshIndicator();
     refreshConflictIndicator();
@@ -427,6 +422,7 @@ function onStartPlaceMachine(typeName) {
   const pre_machine = createMachine(typeName);
   setPlacingMachineType(typeName);
   setPreMachine(pre_machine);
+  setSelectMoving(true);
 
   const onmousemove = (event) => {
     refreshIndicator();
@@ -656,17 +652,15 @@ function onStartSelectMove(name, is_copy = false) {
     Object.values(S.metaBackup.pipes).forEach((p) => deletePipe(p));
   }
   // Step 3: 鼠标事件 — mousemove 实时偏移，mousedown 确认放置
-  let last_delta_x = 0,
-    last_delta_y = 0;
   const onmousemove = (event) => {
     S.now_pixel_x = event.client.x;
     S.now_pixel_y = event.client.y;
     const { gridDeltaX, gridDeltaY } = moveMasksToOffset(
-      last_delta_x,
-      last_delta_y,
+      S.last_delta_x,
+      S.last_delta_y,
     );
-    last_delta_x = gridDeltaX;
-    last_delta_y = gridDeltaY;
+    S.last_delta_x = gridDeltaX;
+    S.last_delta_y = gridDeltaY;
   };
 
   const onmousedown = (event) => {
@@ -759,6 +753,8 @@ function onStartSelectDelete() {
   Object.values(S.metaBackup.machines).forEach((m) => deleteMachine(m));
   Object.values(S.metaBackup.belts).forEach((b) => deleteBelt(b));
   Object.values(S.metaBackup.pipes).forEach((p) => deletePipe(p));
+  // 清空备份，防止 onCancel → rebuildIfSelectMoving 重新放回
+  S.metaBackup = { machines: {}, belts: {}, pipes: {} };
   onCancel();
 }
 
@@ -773,34 +769,43 @@ function onCancel() {
   S.placingMachineType = null;
   S.nowPlaceNodeType = null;
   S.pre_node = null;
+  S.pre_machine = null;
   const commandStore = useCommandStore();
   commandStore.last_command = CMD_DEFAULT;
   commandStore.select_command = CMD_DEFAULT;
 }
 
 function onMouseMove(event) {
-  _cancelLongPress();
+  _longPress.cancel();
+  _clickDetector.cancel();
   placeIndicatorHandle(event);
-  if (!S.isSelectMoving) {
-    handleDragMove(event);
-  }
+  if (!S.isSelectMoving) handleDragMove(event);
   Object.values(S.queue.mousemove).forEach((item) => item(event));
 }
 
 function onMouseDown(event) {
   handleDragStart(event);
+  if (!S.isSelectMoving && useCommandStore().select_command === CMD_DEFAULT) {
+    _longPress.start(() => {
+      onStartMoveMachine(event.gridX, event.gridY);
+    });
+    _clickDetector.start(() => {
+      const machine = getMachineByPosition(event.gridX, event.gridY);
+      if (machine) handleMachineClick(machine);
+    });
+  }
   Object.values(S.queue.mousedown).forEach((item) => item(event));
-  _startLongPress(event.gridX, event.gridY);
 }
 
 function onMouseUp(event) {
-  _cancelLongPress();
+  _longPress.cancel();
+  _clickDetector.cancel("up");
   handleDragEnd(event);
   Object.values(S.queue.mouseup).forEach((item) => item(event));
 }
 
 function onMouseOut(event) {
-  _cancelLongPress();
+  _longPress.cancel();
   setPlaceIndicatorAlpha(0);
   onMouseUp(event);
 }

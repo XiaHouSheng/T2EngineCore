@@ -84,9 +84,73 @@ function scanAdjacentPort(gridX, gridY) {
     right: { dx: 1, dy: 0 },
   };
   const opposite = { up: "down", down: "up", left: "right", right: "left" };
-  const offset = outputTypes.includes(type_) ? dirToOffset[dir] : dirToOffset[opposite[dir]];
+  const offset = outputTypes.includes(type_)
+    ? dirToOffset[dir]
+    : dirToOffset[opposite[dir]];
   if (!offset) return { offsetX: null, offsetY: null, dir: null };
   return { offsetX: offset.dx, offsetY: offset.dy, dir };
 }
 
-export { proxyForHandle, scanAdjacentPort, directionConstraint };
+/**
+ * 创建可取消的延迟调用器（防抖启动）
+ * 适用于长按检测等场景：先 cancel 再 start，保证只有一个待执行回调
+ * @param {number} delayMs 延迟毫秒数，默认 300
+ * @returns {{ start: (fn: Function) => void, cancel: () => void, isPending: () => boolean }}
+ */
+function makeDebouncedDelay(delayMs = 300) {
+  let _timer = null;
+  const cancel = () => {
+    if (_timer !== null) {
+      clearTimeout(_timer);
+      _timer = null;
+    }
+  };
+  const start = (fn) => {
+    cancel();
+    _timer = setTimeout(() => {
+      _timer = null;
+      fn();
+    }, delayMs);
+  };
+  const isPending = () => _timer !== null;
+  return { start, cancel, isPending };
+}
+
+/**
+ * 点击检测器：pointerdown 启动计时器，pointerup 时若仍在阈值内则执行回调
+ * 计时器到期后自动失效，cancel(true) 不会触发执行
+ * @param {number} delayMs 阈值毫秒数
+ * @returns {{ start: (fn: Function) => void, cancel: (execNow?: boolean) => void, isPending: () => boolean }}
+ */
+function makeClickDetector(delayMs = 300) {
+  let _timer = null;
+  let _cb = null;
+  const cancel = (execNow = false) => {
+    if (execNow && isPending() && _cb) {
+      _cb();
+    }
+    if (_timer !== null) {
+      clearTimeout(_timer);
+      _timer = null;
+    }
+    _cb = null;
+  };
+  const start = (fn) => {
+    cancel();
+    _cb = fn;
+    _timer = setTimeout(() => {
+      _timer = null;
+      _cb = null;
+    }, delayMs);
+  };
+  const isPending = () => _timer !== null;
+  return { start, cancel, isPending };
+}
+
+export {
+  proxyForHandle,
+  scanAdjacentPort,
+  directionConstraint,
+  makeDebouncedDelay,
+  makeClickDetector,
+};

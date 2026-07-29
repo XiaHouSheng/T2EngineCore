@@ -177,15 +177,14 @@ class MachineContainer extends Container {
 
   /* ======== UI（机器名称 + 配方图标） ======== */
   renderUI() {
-    const resourcesStore = useResourcesStore();
-    const { machine, machineWidth, machineHeight, cellWidth, cellHeight } = this;
+    const { machineWidth, machineHeight, cellWidth, cellHeight } = this;
     const cx = machineWidth / 2;
     const cy = machineHeight / 2;
 
     // 机器名称
-    if (machine.name) {
+    if (this.machine.name) {
       this.nameText = new Text({
-        text: machine.name,
+        text: this.machine.name,
         style: {
           fontSize: Math.min(cellWidth, cellHeight) * 0.35,
           fill: 0x000000,
@@ -197,14 +196,35 @@ class MachineContainer extends Container {
       this.uiContainer.addChild(this.nameText);
     }
 
-    // 配方容器
+    // 配方图标
     this.recipeContainer = new Container();
     this.uiContainer.addChild(this.recipeContainer);
+    this.renderRecipeUI();
+  }
+
+  /** 只重新渲染配方图标部分（不清除名称和布局） */
+  refreshUI() {
+    // 清除旧的配方容器
+    if (this.recipeContainer) {
+      this.uiContainer.removeChild(this.recipeContainer);
+      this.recipeContainer.destroy({ children: true });
+    }
+    this.recipeContainer = new Container();
+    this.uiContainer.addChild(this.recipeContainer);
+    this.renderRecipeUI();
+  }
+
+  /** 渲染配方图标的内部逻辑，使用 machine.now_recipe */
+  renderRecipeUI() {
+    const resourcesStore = useResourcesStore();
+    const { machine, machineWidth, machineHeight, cellWidth, cellHeight } = this;
+    const cx = machineWidth / 2;
+    const cy = machineHeight / 2;
 
     // 配方图标
     const recipeIds = machine.recipe_id;
     if (!recipeIds || recipeIds.length === 0) return;
-    const recipe = resourcesStore.recipes[recipeIds[0]];
+    const recipe = resourcesStore.recipes[machine.now_recipe || recipeIds[0]];
     if (!recipe) return;
 
     const inIds = Object.keys(recipe.in || {});

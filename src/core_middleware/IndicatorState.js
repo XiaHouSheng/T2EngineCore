@@ -42,6 +42,8 @@ const S = {
   base_grid_y: null,
   now_grid_x: null,
   now_grid_y: null,
+  last_delta_x: 0,
+  last_delta_y: 0,
   base_pixel_x: null,
   base_pixel_y: null,
   now_pixel_x: null,
@@ -195,6 +197,8 @@ function setSelectBaseCenterPixel(metaBackup, storageStore) {
   );
   S.base_pixel_x = gridX * cellWidth;
   S.base_pixel_y = gridY * cellHeight;
+  S.now_pixel_x = S.base_pixel_x;
+  S.now_pixel_y = S.base_pixel_y;
 }
 
 function generateConflictMask(metaConflict) {

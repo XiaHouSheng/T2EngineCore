@@ -123,6 +123,7 @@ function drawMachineMask(machines, now_keys, is_conflict = false) {
       { gridWidth: machine.gridWidth, gridHeight: machine.gridHeight },
       machine.anchor[machine.rotation],
       is_conflict,
+      machine,
     );
     now_keys.add(key);
     masks[key] = mask;

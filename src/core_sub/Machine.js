@@ -1,4 +1,8 @@
-import { saveMachine, dropMachine, getMachineGridPosition } from "../core_storage/MachineStorage.js";
+import {
+  saveMachine,
+  dropMachine,
+  getMachineGridPosition,
+} from "../core_storage/MachineStorage.js";
 import { drawMachine, dropDrawMachine } from "../core_stage/MachineStage.js";
 import { useMachineStore } from "../stores/MachineStore.js";
 import { nanoid } from "nanoid";
@@ -34,7 +38,9 @@ function createMachine(typename) {
   machine.id = nanoid();
   machine.type = typename;
   machine.rotation = 0;
-  machine.portOffsetIndex = 0; // 4 个旋转状态的指针
+  machine.port_offset_index = 0;
+  machine.now_recipe = null;
+  machine.now_mode = null;
   return machine;
 }
 
@@ -59,7 +65,12 @@ function rotateMachine(machine) {
   }
   machine.mask = res;
   // 旋转 port 的方向后缀 (bo.down → bo.right)
-  const portRotateMap = { up: "right", down: "left", left: "up", right: "down" };
+  const portRotateMap = {
+    up: "right",
+    down: "left",
+    left: "up",
+    right: "down",
+  };
   for (let r = 0; r < machine.mask.length; r++) {
     for (let c = 0; c < machine.mask[r].length; c++) {
       const cell = machine.mask[r][c];
@@ -73,7 +84,7 @@ function rotateMachine(machine) {
   machine.gridHeight = cols;
   machine.rotation = machine.rotation === 0 ? 1 : 0;
   // port 偏移指针右移（4 个旋转状态循环）
-  machine.portOffsetIndex = ((machine.portOffsetIndex ?? 0) + 1) % 4;
+  machine.port_offset_index = ((machine.port_offset_index ?? 0) + 1) % 4;
   return machine;
 }
 

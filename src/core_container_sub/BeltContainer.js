@@ -17,16 +17,16 @@ class BeltContainer extends Container {
     this.cellHeight = cellSize.height;
 
     const entry = resourcesStore.beltSprites[`${belt.in}.${belt.out}`];
-    console.log(entry)
-    const defaultSprite = new Sprite({
-      texture: entry.texture,
-      anchor: 0.5,
-      rotation: entry.rotation,
-      width: this.cellWidth,
-      height: this.cellHeight,
-    });
-    this.addChild(defaultSprite);
-    
+    if (entry) {
+      const defaultSprite = new Sprite({
+        texture: entry.texture,
+        anchor: 0.5,
+        rotation: entry.rotation,
+        width: this.cellWidth,
+        height: this.cellHeight,
+      });
+      this.addChild(defaultSprite);
+    }
     /*
     const testSprite = new Sprite({
       texture: texture,

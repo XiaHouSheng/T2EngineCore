@@ -15,17 +15,17 @@ class PipeContainer extends Container {
 
     this.cellWidth = cellSize.width;
     this.cellHeight = cellSize.height;
-    
-    console.log(`${pipe.in}.${pipe.out}`)
-    console.log(resourcesStore.pipeSprites)
+
     const entry = resourcesStore.pipeSprites[`${pipe.in}.${pipe.out}`];
-    const defaultSprite = new Sprite(entry.texture);
-    defaultSprite.anchor.set(0.5, 0.5);
-    defaultSprite.rotation = entry.rotation;
-    defaultSprite.width = this.cellWidth;
-    defaultSprite.height = this.cellHeight;
-    this.addChild(defaultSprite);
-    
+    if (entry) {
+      const defaultSprite = new Sprite(entry.texture);
+      defaultSprite.anchor.set(0.5, 0.5);
+      defaultSprite.rotation = entry.rotation;
+      defaultSprite.width = this.cellWidth;
+      defaultSprite.height = this.cellHeight;
+      this.addChild(defaultSprite);
+    }
+
     this.position.set(x, y);
   }
 }

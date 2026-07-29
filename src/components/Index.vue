@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { app } from "../core_stage/SimStage.js";
 import { useStorageStore } from "../stores/StorageStore.js";
+import { useResourcesStore } from "../stores/ResourcesStore.js";
 import { useMachineStore } from "../stores/MachineStore.js";
 import { drawGridLines, drawHitArea } from "../core_stage/SimInit.js";
 import {
@@ -31,6 +32,11 @@ import {
 import { initIndicator } from "../core_sub/Indicator.js";
 import { dispatchPlaceMachineHandle, dispatchPlaceNodeHandle } from "../core_middleware/KeyboardHandle.js";
 import { S } from "../core_middleware/IndicatorState.js";
+import { setMachineClickHandler } from "../core_middleware/EventHandle.js";
+import {
+  setNowRecipe,
+  getMachineObject,
+} from "../core_middleware/MachineUtil.js";
 import {
   drawBatchMask,
   drawMaskFromPosition,
@@ -51,6 +57,34 @@ const canvas = ref(null);
 const showMachineSelector = ref(false);
 const selectedMachineType = ref(null);
 const machineTypeList = computed(() => Object.keys(machineStore.machineTypes));
+
+// 配方选择器状态
+const showRecipeSelector = ref(false);
+const recipeSelectorMachine = ref(null);
+const recipeSelectorOptions = ref([]);
+const selectedRecipeId = ref(null);
+
+// 配方选择辅助
+const resourcesStore = useResourcesStore();
+function openRecipeSelector(machine) {
+  recipeSelectorMachine.value = machine;
+  selectedRecipeId.value = machine.now_recipe || (machine.recipe_id?.[0] ?? null);
+  recipeSelectorOptions.value = (machine.recipe_id || [])
+    .map((id) => resourcesStore.recipes[id])
+    .filter(Boolean);
+  showRecipeSelector.value = true;
+}
+function confirmRecipe() {
+  const m = recipeSelectorMachine.value;
+  if (!m || !selectedRecipeId.value) return;
+  setNowRecipe(m, selectedRecipeId.value);
+  const obj = getMachineObject(m.id);
+  if (obj?.refreshUI) obj.refreshUI();
+  showRecipeSelector.value = false;
+}
+function cancelRecipe() {
+  showRecipeSelector.value = false;
+}
 
 function onPlaceMachineClick() {
   selectedMachineType.value = null;
@@ -103,6 +137,9 @@ function cancelPlaceNode() {
 onMounted(() => {
   window.addEventListener("keydown", handleKeyboard);
   window.addEventListener("keydown", handleKeyboardForZoom);
+
+  // 机器点击 → EventHandle → 打开配方选择
+  setMachineClickHandler((machine) => openRecipeSelector(machine));
 });
 
 onUnmounted(() => {
@@ -142,6 +179,46 @@ onUnmounted(() => {
       <div class="selector-actions">
         <button class="btn-cancel" @click="cancelPlaceMachine">取消</button>
         <button class="btn-confirm" :disabled="!selectedMachineType" @click="confirmPlaceMachine">确认放置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 节点类型选择弹框 -->
+  <div v-if="showNodeSelector" class="machine-selector-overlay" @click.self="cancelPlaceNode">
+    ...
+  </div>
+
+  <!-- 配方选择弹框 -->
+  <div v-if="showRecipeSelector" class="machine-selector-overlay" @click.self="cancelRecipe">
+    <div class="machine-selector-dialog">
+      <h3>选择配方 — {{ recipeSelectorMachine?.name || recipeSelectorMachine?.id }}</h3>
+      <div class="machine-list">
+        <div
+          v-for="recipe in recipeSelectorOptions"
+          :key="recipe.id"
+          class="machine-item"
+          :class="{ active: selectedRecipeId === recipe.id }"
+          @click="selectedRecipeId = recipe.id"
+        >
+          <span class="machine-key">{{ recipe.name || recipe.id }}</span>
+          <span class="machine-name">
+            <span v-for="(cnt, item) in recipe.in" :key="'in-'+item" class="recipe-item">
+              {{ item }}×{{ cnt }}
+            </span>
+            <span class="recipe-arrow">→</span>
+            <span v-for="(cnt, item) in recipe.out" :key="'out-'+item" class="recipe-item">
+              {{ item }}×{{ cnt }}
+            </span>
+          </span>
+          <span class="machine-size">{{ recipe.time }}s</span>
+        </div>
+        <div v-if="recipeSelectorOptions.length === 0" class="empty-hint">
+          该机器无可选配方
+        </div>
+      </div>
+      <div class="selector-actions">
+        <button class="btn-cancel" @click="cancelRecipe">取消</button>
+        <button class="btn-confirm" :disabled="!selectedRecipeId" @click="confirmRecipe">确认</button>
       </div>
     </div>
   </div>
@@ -309,5 +386,21 @@ onUnmounted(() => {
 .node-key {
   font-family: monospace;
   font-size: 14px;
+}
+
+/* 配方选择器 */
+.recipe-item {
+  font-size: 12px;
+  color: #aaa;
+  margin-right: 4px;
+}
+.recipe-arrow {
+  margin: 0 6px;
+  color: #666;
+}
+.empty-hint {
+  text-align: center;
+  color: #666;
+  padding: 20px 0;
 }
 </style>
