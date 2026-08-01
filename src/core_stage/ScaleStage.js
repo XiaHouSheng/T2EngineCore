@@ -47,4 +47,4 @@ function setBackgroundGraphic(graphic) {
   viewportContainer.addChildAt(graphic, viewportContainer.children.length - 1);
 }
 
-export { setPosition, setScale, resetScale, resetPosition, setBackgroundColor, setBackgroundGraphic };
+export { setPosition, setScale, resetScale, resetPosition, setBackgroundGraphic };
