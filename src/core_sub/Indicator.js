@@ -554,17 +554,29 @@ function onStartSelect(name) {
 
   const storageStore = useStorageStore();
 
+  // 页面/屏幕坐标 -> 视口世界坐标（与 SimInit.proxyProcessPositionWithScale 一致）
+  const toWorld = (event) => {
+    const { x: offsetX, y: offsetY } = storageStore.offset_position;
+    const { scale } = storageStore;
+    return {
+      x: (event.screen.x - offsetX) / scale,
+      y: (event.screen.y - offsetY) / scale,
+    };
+  };
+
   const onmousedown = (event) => {
-    S.base_pixel_x = event.client.x;
-    S.base_pixel_y = event.client.y;
+    const { x, y } = toWorld(event);
+    S.base_pixel_x = x;
+    S.base_pixel_y = y;
     S.selectIndicator.position.set(S.base_pixel_x, S.base_pixel_y);
     start_select = true;
   };
   const onmousemove = (event) => {
     if (!start_select) return;
     S.selectIndicator.visible = true;
-    const width = event.client.x - S.base_pixel_x;
-    const height = event.client.y - S.base_pixel_y;
+    const { x, y } = toWorld(event);
+    const width = x - S.base_pixel_x;
+    const height = y - S.base_pixel_y;
     S.selectIndicator.drawSelectBox(
       width,
       height,
@@ -576,14 +588,15 @@ function onStartSelect(name) {
     start_select = false;
     S.selectIndicator.visible = false;
 
+    const { x, y } = toWorld(event);
     const { masks, keys } = drawMaskSelectArea(
       {
         startX: S.base_pixel_x,
         startY: S.base_pixel_y,
       },
       {
-        endX: event.client.x,
-        endY: event.client.y,
+        endX: x,
+        endY: y,
       },
       set,
     );
@@ -642,6 +655,16 @@ function onStartSelectMove(name, is_copy = false) {
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
 
+  // 页面/屏幕坐标 -> 视口世界坐标（与 SimInit.proxyProcessPositionWithScale 一致）
+  const toWorld = (event) => {
+    const { x: offsetX, y: offsetY } = storageStore.offset_position;
+    const { scale } = storageStore;
+    return {
+      x: (event.screen.x - offsetX) / scale,
+      y: (event.screen.y - offsetY) / scale,
+    };
+  };
+
   // 计算选中实体的中心 pixel 作为基准
   setSelectBaseCenterPixel(S.metaBackup, storageStore);
   // Step 2: 删除原始实体（清 storage + 拆 Container）
@@ -653,8 +676,9 @@ function onStartSelectMove(name, is_copy = false) {
   }
   // Step 3: 鼠标事件 — mousemove 实时偏移，mousedown 确认放置
   const onmousemove = (event) => {
-    S.now_pixel_x = event.client.x;
-    S.now_pixel_y = event.client.y;
+    const { x, y } = toWorld(event);
+    S.now_pixel_x = x;
+    S.now_pixel_y = y;
     const { gridDeltaX, gridDeltaY } = moveMasksToOffset(
       S.last_delta_x,
       S.last_delta_y,
@@ -664,8 +688,9 @@ function onStartSelectMove(name, is_copy = false) {
   };
 
   const onmousedown = (event) => {
-    const pixelDeltaX = event.client.x - S.base_pixel_x;
-    const pixelDeltaY = event.client.y - S.base_pixel_y;
+    const { x, y } = toWorld(event);
+    const pixelDeltaX = x - S.base_pixel_x;
+    const pixelDeltaY = y - S.base_pixel_y;
     const gridDeltaX = Math.round(pixelDeltaX / cellWidth);
     const gridDeltaY = Math.round(pixelDeltaY / cellHeight);
     // 检查是否冲突

@@ -10,7 +10,8 @@ let storageStore = null;
 function onWheelChange(event) {
   if (!storageStore) storageStore = useStorageStore();
   const { x: offsetX, y: offsetY } = storageStore.offset_position;
-  const { x: mouseX, y: mouseY } = event.client;
+  // event.screen 为 canvas 内部坐标（已补偿 canvas 位置/CSS 缩放/DPR）
+  const { x: mouseX, y: mouseY } = event.screen;
   const oldScale = storageStore.scale;
   const worldX = (mouseX - offsetX) / oldScale;
   const worldY = (mouseY - offsetY) / oldScale;
