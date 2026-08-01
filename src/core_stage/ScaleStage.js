@@ -43,4 +43,8 @@ function resetPosition() {
   setPosition(0, 0);
 }
 
-export { setPosition, setScale, resetScale, resetPosition };
+function setBackgroundGraphic(graphic) {
+  viewportContainer.addChildAt(graphic, viewportContainer.children.length - 1);
+}
+
+export { setPosition, setScale, resetScale, resetPosition, setBackgroundColor, setBackgroundGraphic };

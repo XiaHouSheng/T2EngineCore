@@ -7,15 +7,15 @@ import { onStartPlaceMachine, onStartPlaceNode } from "../core_sub/Indicator.js"
 
 let commandStore = null;
 
-function dispatchPlaceMachineHandle(typeName, key) {
+function dispatchPlaceMachineHandle(typeName) {
   if (!commandStore) commandStore = useCommandStore();
-  handleKeyboard({ key: key.toLowerCase() });
+  handleKeyboard({ key: "place_machine" });
   onStartPlaceMachine(typeName);
 }
 
-function dispatchPlaceNodeHandle(typeName, key, is_belt = true) {
+function dispatchPlaceNodeHandle(typeName, is_belt = true) {
   if (!commandStore) commandStore = useCommandStore();
-  handleKeyboard({ key: key.toLowerCase() });
+  handleKeyboard({ key: "place_node" });
   onStartPlaceNode(typeName, is_belt);
 }
 

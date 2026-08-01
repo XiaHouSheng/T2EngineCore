@@ -93,7 +93,7 @@ function onPlaceMachineClick() {
 function confirmPlaceMachine() {
   if (!selectedMachineType.value) return;
   showMachineSelector.value = false;
-  dispatchPlaceMachineHandle(selectedMachineType.value, 'place_machine');
+  dispatchPlaceMachineHandle(selectedMachineType.value);
 }
 function cancelPlaceMachine() {
   showMachineSelector.value = false;
@@ -114,7 +114,7 @@ function onPlaceNodeClick() {
 function confirmPlaceNode() {
   if (!selectedNodeType.value) return;
   showNodeSelector.value = false;
-  dispatchPlaceNodeHandle(selectedNodeType.value, 'place_node', selectedNodeKind.value === 'belt');
+  dispatchPlaceNodeHandle(selectedNodeType.value, selectedNodeKind.value === 'belt');
 }
 function cancelPlaceNode() {
   showNodeSelector.value = false;
