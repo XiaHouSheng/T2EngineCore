@@ -60,6 +60,7 @@ import {
   setPlaceMode,
   togglePipeOrBeltMode,
   setSelectMoving,
+  setSelectCopy,
   setPlacingMachineType,
   setNowPlaceNodeType,
   setPreMachine,
@@ -771,6 +772,7 @@ function onStartSelectRotate(name) {
 }
 
 function onStartSelectCopy(name) {
+  setSelectCopy(true);
   onStartSelectMove(name, true);
 }
 

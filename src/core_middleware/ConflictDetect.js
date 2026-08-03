@@ -1,6 +1,5 @@
 import {
   mapMachineArea,
-  mapMachineAreaWithType,
   getMachineByPosition,
   getMachineMaskTypeByPosition,
   getLeftTopPosition,
@@ -167,8 +166,12 @@ function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
         // rotation may make machine.x/y stale, always use centerX/Y
         const newX = x + gridDeltaX + 1;
         const newY = y + gridDeltaY + 1;
+        const machine_ = getMachineByPosition(newX, newY);
         const belt = getBeltByPosition(newX, newY);
         const pipe = getPipeByPosition(newX, newY);
+        if (machine_) {
+          metaConflict.machines[machine_.id] = machine_;
+        }
         if (belt) {
           metaConflict.belts[belt.id] = belt;
         }
@@ -211,11 +214,15 @@ function detectOnMoveMask(metaRotateMove, gridDeltaX, gridDeltaY) {
   Object.values(pipes).forEach((pipe) => {
     const newX = pipe.gridX + gridDeltaX;
     const newY = pipe.gridY + gridDeltaY;
-    console.log(newX, newY)
     const machine = getMachineByPosition(newX, newY);
+    const belt_ = getBeltByPosition(newX, newY);
     const pipe_ = getPipeByPosition(newX, newY);
     if (machine) {
       metaConflict.machines[machine.id] = machine;
+    }
+    // 移动 pipe 撞上特殊 belt 节点 → 冲突（default 直线 belt 允许交叉）
+    if (belt_ && belt_.type != "default") {
+      metaConflict.belts[belt_.id] = belt_;
     }
     if (pipe_) {
       metaConflict.pipes[pipe_.id] = pipe_;

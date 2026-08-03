@@ -25,6 +25,7 @@ import { pixelToGridNoneOffset } from "./PositionConvert.js";
 const S = {
   pipeOrBeltMode: true,
   isSelectMoving: false,
+  is_select_copy: false,
   nowPlaceIsBelt: true,
 
   placeIndicator: null,
@@ -116,7 +117,8 @@ function refreshHandleQueue() {
 }
 
 function rebuildIfSelectMoving() {
-  if (S.isSelectMoving) {
+  // 复制模式原始实体仍在 storage，无需（也不应）重建
+  if (S.isSelectMoving && !S.is_select_copy) {
     Object.keys(S.metaBackup.machines).forEach((id) => {
       const m = S.metaBackup.machines[id];
       placeMachine(m, m.gridX, m.gridY);
@@ -129,8 +131,10 @@ function rebuildIfSelectMoving() {
       const p = S.metaBackup.pipes[id];
       placePipe(p, p.gridX, p.gridY, p.in, p.out);
     });
-    S.isSelectMoving = false;
   }
+  S.is_select_copy = false;
+  S.isSelectMoving = false;
+  S.metaBackup = { machines: {}, belts: {}, pipes: {} };
 }
 
 function moveMasksToOffset(last_delta_x, last_delta_y) {
@@ -199,6 +203,9 @@ function setSelectBaseCenterPixel(metaBackup, storageStore) {
   S.base_pixel_y = gridY * cellHeight;
   S.now_pixel_x = S.base_pixel_x;
   S.now_pixel_y = S.base_pixel_y;
+  // 重置增量，避免 moveMasksToOffset 的 early-return 跳过新一次移动的首帧冲突检测
+  S.last_delta_x = null;
+  S.last_delta_y = null;
 }
 
 function generateConflictMask(metaConflict) {
@@ -257,6 +264,10 @@ function setSelectMoving(v) {
   S.isSelectMoving = v;
 }
 
+function setSelectCopy(v) {
+  S.is_select_copy = v;
+}
+
 export {
   S,
   initIndicator,
@@ -278,6 +289,7 @@ export {
   setPlaceMode,
   togglePipeOrBeltMode,
   setSelectMoving,
+  setSelectCopy,
   setPlacingMachineType,
   setNowPlaceNodeType,
   setPreMachine,

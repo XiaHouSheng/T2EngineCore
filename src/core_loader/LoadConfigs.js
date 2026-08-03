@@ -87,6 +87,47 @@ const TEXTURE_FILES = [
   "arrow_up",
 ];
 
+// public/machine_icons/ 下所有 PNG 文件名（不含扩展名作 key）
+const MACHINE_ICON_FILES = [
+  "base_segment_1",
+  "cmpt_mc_1",
+  "concealed_pipe_in_1",
+  "concealed_pipe_in_muti_1",
+  "concealed_pipe_out",
+  "concealed_pipe_out_muti_1",
+  "dismantler_1",
+  "filling_pd_mc_1",
+  "furnance_1",
+  "gas_disperser_1",
+  "gas_reactor_1",
+  "gas_tank_1",
+  "grinder_1",
+  "liquid_cleaner_1",
+  "liquid_purifier_1",
+  "liquid_tank_1",
+  "mix_pool_1",
+  "mix_pool_2",
+  "phase_trans_1",
+  "phase_trans_2",
+  "planter_1",
+  "power_pile_1",
+  "power_sta_1",
+  "protocol_core_1",
+  "relay_tower",
+  "seedcol_1",
+  "shaper_1",
+  "source_pile_1",
+  "storage_box_1",
+  "thickener_1",
+  "tools_asm_mc_1",
+  "warehouse_input_1",
+  "warehouse_output_1",
+  "winder_1",
+  "xiranite_oven_1",
+  "xiranite_pylon",
+  "xiranite_relay",
+];
+
 async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
@@ -169,6 +210,28 @@ export async function loadTextures() {
     return true;
   } catch (err) {
     console.warn("[Loader] textures not found:", err.message);
+    return false;
+  }
+}
+
+/**
+ * 加载 public/machine_icons/ 下所有 PNG → 存入 ResourcesStore.machineIcons
+ * key = 文件名(不含扩展名)，如 "furnance_1"
+ */
+export async function loadMachineIcons() {
+  try {
+    const resStore = useResourcesStore();
+    const entries = await Promise.all(
+      MACHINE_ICON_FILES.map((name) =>
+        Assets.load(`${BASE}machine_icons/${name}.png`).then((tex) => [name, tex]),
+      ),
+    );
+    const map = Object.fromEntries(entries);
+    resStore.setMachineIcons(map);
+    console.log(`[Loader] machine icons loaded (${entries.length} files)`);
+    return true;
+  } catch (err) {
+    console.warn("[Loader] machine icons not found:", err.message);
     return false;
   }
 }
@@ -353,6 +416,7 @@ export async function loadAllConfigs() {
     loadDataConfigs(),
     loadIconSheet(),
     loadTextures(),
+    loadMachineIcons(),
   ]);
   // textures 加载成功后构建 sprite 表
   buildSpriteSheets();

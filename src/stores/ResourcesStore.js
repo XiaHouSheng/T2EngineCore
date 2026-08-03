@@ -25,6 +25,84 @@ export const useResourcesStore = defineStore("resourcesStore", () => {
   // textures：public/textures/ 下所有 PNG，key = 文件名(不含扩展名)
   const textures = {};
 
+  // machineIcons：public/machine_icons/ 下所有 PNG，key = 文件名(不含扩展名)
+  const machineIcons = {};
+
+  // machineOverlays：特殊机器的贴图覆盖配置（替代 renderBackground）
+  // key = machine.type，value = { texture: 纹理名, rotation: 旋转角度(弧度) }
+  const machineOverlays = {
+    power_pile_1: {
+      texture: "bg_machine_power",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    liquid_tank_1: {
+      texture: "bg_machine_squirter_1",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    gas_tank_1: {
+      texture: "bg_machine_squirter_1",
+      rotation: 0,
+      name: true,
+      recipe: true,
+      name: true,
+      recipe: true,
+    },
+    source_pile_1: {
+      texture: "bg_machine_log_hongs_bus_source",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    base_segment_1: {
+      texture: "bg_machine_log_hongs_bus",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    //这里暗管的贴图需要修改
+    concealed_pipe_in_1: {
+      texture: "bg_machine_underground_pipe_1",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    concealed_pipe_out: {
+      texture: "bg_machine_underground_pipe_1",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    concealed_pipe_in_muti_1: {
+      texture: "bg_machine_underground_pipe_2",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    concealed_pipe_out_muti_1: {
+      texture: "bg_machine_underground_pipe_2",
+      rotation: 0,
+      name: true,
+      recipe: true,
+    },
+    warehouse_output_1: {
+      texture: "bg_machine_unloader",
+      rotation: 0,
+      name: false,
+      recipe: true,
+    },
+    warehouse_input_1: {
+      texture: "bg_machine_loader",
+      rotation: Math.PI,
+      name: false,
+      recipe: true,
+    }
+
+  };
+
   // beltSprites / pipeSprites：根据传送带/管道贴图构建的方向索引 sprite 表
   // key = "入口方向.出口方向"，如 "right.right"（直）、"down.right"（弯）
   const beltSprites = {};
@@ -125,6 +203,27 @@ export const useResourcesStore = defineStore("resourcesStore", () => {
   }
 
   /**
+   * 批量设置机器图标纹理，key = 文件名(不含扩展名)，value = PIXI.Texture
+   * @param {Record<string, Texture>} map
+   */
+  function setMachineIcons(map) {
+    Object.keys(machineIcons).forEach((k) => delete machineIcons[k]);
+    Object.assign(machineIcons, map);
+  }
+
+  /**
+   * 设置单个机器的贴图覆盖配置（替代背景渲染）
+   * @param {string} type - machine.type
+   * @param {{ texture: string, rotation?: number }} config - 纹理名 + 旋转角度(弧度)
+   */
+  function setMachineOverlay(type, config) {
+    machineOverlays[type] = {
+      rotation: 0,
+      ...config,
+    };
+  }
+
+  /**
    * 批量设置 belt/pipe sprite 表
    * @param {{ belt: Record<string, Sprite>, pipe: Record<string, Sprite> }} sheets
    */
@@ -168,6 +267,8 @@ export const useResourcesStore = defineStore("resourcesStore", () => {
     recipes,
     machines,
     textures,
+    machineIcons,
+    machineOverlays,
     beltSprites,
     pipeSprites,
     beltPorts,
@@ -181,6 +282,8 @@ export const useResourcesStore = defineStore("resourcesStore", () => {
     injectMachineRecipeIds,
     setIconTexture,
     setTextures,
+    setMachineIcons,
+    setMachineOverlay,
     setSpriteSheets,
     injectMachineAnchorMask,
     setPortSheets,

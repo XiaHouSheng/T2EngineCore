@@ -22,10 +22,14 @@ import { useStorageStore } from "../stores/StorageStore.js";
 function getPortOffset(type, dir, cellW, cellH, factor) {
   const sign = (type === "bo" || type === "po" ? 1 : -1) * factor;
   switch (dir) {
-    case "up":    return { x: 0,          y: -cellH * sign };
-    case "down":  return { x: 0,          y: +cellH * sign };
-    case "left":  return { x: -cellW * sign, y: 0 };
-    case "right": return { x: +cellW * sign, y: 0 };
+    case "up":
+      return { x: 0, y: -cellH * sign };
+    case "down":
+      return { x: 0, y: +cellH * sign };
+    case "left":
+      return { x: -cellW * sign, y: 0 };
+    case "right":
+      return { x: +cellW * sign, y: 0 };
   }
   return { x: 0, y: 0 };
 }
@@ -85,10 +89,23 @@ class MachineContainer extends Container {
     this.addChild(this.portContainer);
     this.addChild(this.uiContainer);
 
-    this.renderPorts(machine);
+    // 配置了贴图覆盖的特殊机器：跳过端口与背景渲染，直接整张贴图覆盖
+    const overlay = useResourcesStore().machineOverlays[machine.type];
+    if (overlay) {
+      this.renderOverlayTexture();
+      if (overlay.port) {
+        this.renderPorts(machine);
+      }
+      if (overlay.background) {
+        this.renderBackground();
+      }
+      this.renderUI(overlay.recipe, overlay.name);
+    } else {
+      this.renderPorts(machine);
+      this.renderBackground();
+      this.renderUI();
+    }
     this.setPivotAndPosition(machine, x, y);
-    this.renderBackground();
-    this.renderUI();
     this.setupScaleVisibility();
   }
 
@@ -124,10 +141,17 @@ class MachineContainer extends Container {
         );
         sprite.scale.set(scale);
 
-        const factor = (type === "bi" || type === "bo")
-          ? storageStore.default_belt_port_offset
-          : storageStore.default_pipe_port_offset;
-        const offset = getPortOffset(type, dir, this.cellWidth, this.cellHeight, factor);
+        const factor =
+          type === "bi" || type === "bo"
+            ? storageStore.default_belt_port_offset
+            : storageStore.default_pipe_port_offset;
+        const offset = getPortOffset(
+          type,
+          dir,
+          this.cellWidth,
+          this.cellHeight,
+          factor,
+        );
         sprite.x = col * this.cellWidth + this.cellWidth / 2 + offset.x;
         sprite.y = row * this.cellHeight + this.cellHeight / 2 + offset.y;
         this.portContainer.addChild(sprite);
@@ -144,7 +168,7 @@ class MachineContainer extends Container {
     this.position.set(px, py);
   }
 
-  /* ======== 背景（描边 + 背景图标） ======== */
+  /* ======== 背景（装饰底图 + 描边 + 背景图标） ======== */
   renderBackground() {
     const resourcesStore = useResourcesStore();
     const bg = new Container();
@@ -156,18 +180,18 @@ class MachineContainer extends Container {
     bg.addChild(gfx);
 
     // 背景大图标
-    const iconTex = resourcesStore.textures["machine_bg_big_icon"];
+    const iconTex = resourcesStore.machineIcons[this.machine.type];
     if (iconTex) {
       const icon = new Sprite(iconTex);
       icon.anchor.set(0.5, 0.5);
       icon.x = this.machineWidth / 2;
       icon.y = this.machineHeight / 2;
-      icon.alpha = 0.10;
+      icon.alpha = 0.5;
       const iconScale =
         Math.min(
           this.machineWidth / iconTex.width,
           this.machineHeight / iconTex.height,
-        ) - 0.1;
+        ) - 0.2;
       icon.scale.set(iconScale);
       bg.addChild(icon);
     }
@@ -175,15 +199,50 @@ class MachineContainer extends Container {
     this.addChildAt(bg, 0);
   }
 
+  /* ======== 贴图覆盖（特殊机器，替代背景渲染） ======== */
+  renderOverlayTexture() {
+    const resourcesStore = useResourcesStore();
+    const overlay = resourcesStore.machineOverlays[this.machine.type];
+    if (!overlay) return;
+
+    // 优先取 machineIcons，其次取 textures
+    const tex =
+      resourcesStore.machineIcons[overlay.texture] ||
+      resourcesStore.textures[overlay.texture];
+    if (!tex) return;
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5, 0.5);
+    sprite.x = this.machineWidth / 2;
+    sprite.y = this.machineHeight / 2;
+    // 等比覆盖：取较大缩放比，保持比例且盖满机器（允许溢出机器边界）
+    const scale =
+      this.machine.rotation % 2 == 0
+        ? Math.min(
+            this.machineWidth / tex.width,
+            this.machineHeight / tex.height,
+          )
+        : Math.min(
+            this.machineWidth / tex.height,
+            this.machineHeight / tex.width,
+          );
+    sprite.scale.set(scale);
+    // 基础旋转 + 跟随 machine.port_offset_index（0-3 循环，每次 90°）
+    sprite.rotation =
+      (overlay.rotation || 0) +
+      (this.machine.port_offset_index ?? 0) * (Math.PI / 2);
+    this.addChildAt(sprite, 0);
+  }
+
   /* ======== UI（机器名称 + 配方图标） ======== */
-  renderUI() {
+  renderUI(recipe = true, name = true) {
     const { machineWidth, machineHeight, cellWidth, cellHeight } = this;
     const cx = machineWidth / 2;
     const cy = machineHeight / 2;
 
     // 机器名称
-    if (this.machine.name) {
+    if (this.machine.name && name) {
       this.nameText = new Text({
+        fontFamily: "SimHei",
         text: this.machine.name,
         style: {
           fontSize: Math.min(cellWidth, cellHeight) * 0.35,
@@ -197,9 +256,11 @@ class MachineContainer extends Container {
     }
 
     // 配方图标
-    this.recipeContainer = new Container();
-    this.uiContainer.addChild(this.recipeContainer);
-    this.renderRecipeUI();
+    if (recipe) {
+      this.recipeContainer = new Container();
+      this.uiContainer.addChild(this.recipeContainer);
+      this.renderRecipeUI();
+    }
   }
 
   /** 只重新渲染配方图标部分（不清除名称和布局） */
@@ -217,7 +278,8 @@ class MachineContainer extends Container {
   /** 渲染配方图标的内部逻辑，使用 machine.now_recipe */
   renderRecipeUI() {
     const resourcesStore = useResourcesStore();
-    const { machine, machineWidth, machineHeight, cellWidth, cellHeight } = this;
+    const { machine, machineWidth, machineHeight, cellWidth, cellHeight } =
+      this;
     const cx = machineWidth / 2;
     const cy = machineHeight / 2;
 
@@ -257,10 +319,18 @@ class MachineContainer extends Container {
       const leftX = cx - gap * 0.7;
       const rightX = cx + gap * 0.7;
       for (let i = 0; i < Math.min(inLen, 2); i++) {
-        place(inIds[i], leftX, inLen === 1 ? cy : cy + (i === 0 ? -vgap : vgap));
+        place(
+          inIds[i],
+          leftX,
+          inLen === 1 ? cy : cy + (i === 0 ? -vgap : vgap),
+        );
       }
       for (let i = 0; i < Math.min(outLen, 2); i++) {
-        place(outIds[i], rightX, outLen === 1 ? cy : cy + (i === 0 ? -vgap : vgap));
+        place(
+          outIds[i],
+          rightX,
+          outLen === 1 ? cy : cy + (i === 0 ? -vgap : vgap),
+        );
       }
     }
   }
