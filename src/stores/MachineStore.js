@@ -23,6 +23,10 @@ const DEFAULT_TYPES = {
 export const useMachineStore = defineStore("machineStore", () => {
   const machineTypes = markRaw({ ...DEFAULT_TYPES });
 
+  // machineContainerClasses：特殊机器的自定义容器类
+  // key = machine.type，value = 继承 MachineContainer 并重写 render 方法的子类
+  const machineContainerClasses = markRaw({});
+
   /**
    * 从外部配置向 machineTypes 注入机器定义（anchor / mask 等）
    * @param {Record<string, object>} configMap - machines_1_4.json 的完整对象
@@ -35,8 +39,19 @@ export const useMachineStore = defineStore("machineStore", () => {
     }
   }
 
+  /**
+   * 注册特殊机器的自定义容器类（继承 MachineContainer 并重写 render 方法）
+   * @param {string} type - machine.type
+   * @param {typeof import("../core_container_sub/MachineContainer.js").MachineContainer} cls - 容器子类
+   */
+  function setMachineContainerClass(type, cls) {
+    machineContainerClasses[type] = cls;
+  }
+
   return {
     machineTypes,
+    machineContainerClasses,
     injectFromConfig,
+    setMachineContainerClass,
   };
 });

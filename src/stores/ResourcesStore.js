@@ -48,8 +48,6 @@ export const useResourcesStore = defineStore("resourcesStore", () => {
       rotation: 0,
       name: true,
       recipe: true,
-      name: true,
-      recipe: true,
     },
     source_pile_1: {
       texture: "bg_machine_log_hongs_bus_source",

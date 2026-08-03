@@ -89,24 +89,32 @@ class MachineContainer extends Container {
     this.addChild(this.portContainer);
     this.addChild(this.uiContainer);
 
+    // 虚方法：默认按 overlay 配置渲染，子类可整体重写
+    this.renderBody();
+
+    this.setPivotAndPosition(machine, x, y);
+    this.setupScaleVisibility();
+  }
+
+  /* ======== 机器主体渲染（虚方法，子类可整体重写） ======== */
+  renderBody() {
     // 配置了贴图覆盖的特殊机器：跳过端口与背景渲染，直接整张贴图覆盖
-    const overlay = useResourcesStore().machineOverlays[machine.type];
+    const overlay = useResourcesStore().machineOverlays[this.machine.type];
     if (overlay) {
+      this.overlay = overlay;
       this.renderOverlayTexture();
       if (overlay.port) {
-        this.renderPorts(machine);
+        this.renderPorts(this.machine);
       }
       if (overlay.background) {
         this.renderBackground();
       }
       this.renderUI(overlay.recipe, overlay.name);
     } else {
-      this.renderPorts(machine);
+      this.renderPorts(this.machine);
       this.renderBackground();
       this.renderUI();
     }
-    this.setPivotAndPosition(machine, x, y);
-    this.setupScaleVisibility();
   }
 
   /* ======== 端口渲染 ======== */
@@ -266,6 +274,7 @@ class MachineContainer extends Container {
   /** 只重新渲染配方图标部分（不清除名称和布局） */
   refreshUI() {
     // 清除旧的配方容器
+    if (!this.overlay.recipe) return; 
     if (this.recipeContainer) {
       this.uiContainer.removeChild(this.recipeContainer);
       this.recipeContainer.destroy({ children: true });
