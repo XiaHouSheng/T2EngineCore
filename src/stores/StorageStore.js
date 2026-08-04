@@ -6,8 +6,8 @@ export const useStorageStore = defineStore("StorageStore", () => {
   const width = ref(800);
   const height = ref(800);
   const backgroundColor = ref(0xffffff);
-  const rowCount = ref(10);
-  const colCount = ref(10);
+  const rowCount = ref(50);
+  const colCount = ref(50);
   const cellWidth = computed(() => width.value / colCount.value);
   const cellHeight = computed(() => height.value / rowCount.value);
   // 缩放比例以及偏移量

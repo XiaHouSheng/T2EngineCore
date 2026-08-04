@@ -16,7 +16,7 @@ function onWheelChange(event) {
   const worldX = (mouseX - offsetX) / oldScale;
   const worldY = (mouseY - offsetY) / oldScale;
   const zoomRate = event.deltaY > 0 ? 0.95 : 1.05;
-  let scale = Math.max(0.8, Math.min(1.5, storageStore.scale * zoomRate));
+  let scale = Math.max(0.8, Math.min(4, storageStore.scale * zoomRate));
   const newOffsetX = mouseX - worldX * scale;
   const newOffsetY = mouseY - worldY * scale;
   storageStore.scale = scale;

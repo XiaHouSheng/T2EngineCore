@@ -47,20 +47,54 @@ function drawGridLines() {
   const gridWidth = width / col;
   const gridHeight = height / row;
 
-  for (let i = 0; i < row; i++) {
-    grid.moveTo(0, i * gridHeight);
-    grid.lineTo(width, i * gridHeight);
+  // 图纸风格：线段在交点附近断开，交点画小方块
+  // 交点留白与方块尺寸均随格子尺寸缩放
+  const gap = Math.min(gridWidth, gridHeight) * 0.18;
+  const dotSize = Math.max(Math.min(gridWidth, gridHeight) * 0.04, 1);
+
+  // 水平分段线：每个相邻交点之间绘制，交点两侧留白
+  for (let i = 0; i <= row; i++) {
+    const y = i * gridHeight;
+    for (let j = 0; j < col; j++) {
+      const x0 = j * gridWidth + gap;
+      const x1 = (j + 1) * gridWidth - gap;
+      if (x1 > x0) {
+        grid.moveTo(x0, y);
+        grid.lineTo(x1, y);
+      }
+    }
   }
 
-  for (let i = 0; i < col; i++) {
-    grid.moveTo(i * gridWidth, 0);
-    grid.lineTo(i * gridWidth, height);
+  // 垂直分段线
+  for (let j = 0; j <= col; j++) {
+    const x = j * gridWidth;
+    for (let i = 0; i < row; i++) {
+      const y0 = i * gridHeight + gap;
+      const y1 = (i + 1) * gridHeight - gap;
+      if (y1 > y0) {
+        grid.moveTo(x, y0);
+        grid.lineTo(x, y1);
+      }
+    }
   }
 
   grid.stroke({
     pixelLine: true,
     color: 0x123123,
   });
+
+  // 交点小方块
+  for (let i = 0; i <= row; i++) {
+    for (let j = 0; j <= col; j++) {
+      grid.rect(
+        j * gridWidth - dotSize / 2,
+        i * gridHeight - dotSize / 2,
+        dotSize,
+        dotSize,
+      );
+    }
+  }
+  grid.fill({ color: 0x123123 });
 
   backgroundContainer.addChild(grid);
 }
