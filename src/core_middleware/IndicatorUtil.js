@@ -3,6 +3,7 @@ import { getPipeByPosition } from "../core_storage/PipeStorage.js";
 import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { useBeltStore } from "../stores/BeltStore.js";
 import { usePipeStore } from "../stores/PipeStore.js";
+import { parseMaskCell } from "./MaskUtil.js";
 
 function proxyForHandle(func, name, time_ = 300) {
   let lastCall = 0;
@@ -72,10 +73,11 @@ function directionConstraint(gridX, gridY, startX, startY, pipeOrBeltMode) {
 
 function scanAdjacentPort(gridX, gridY) {
   const maskType = getMachineMaskTypeByPosition(gridX, gridY);
-  if (!maskType || !maskType.includes(".")) {
+  const parsed = parseMaskCell(maskType);
+  if (!parsed) {
     return { offsetX: null, offsetY: null, dir: null };
   }
-  const [type_, dir] = maskType.split(".");
+  const { type: type_, dir } = parsed;
   const outputTypes = ["po", "bo"];
   const dirToOffset = {
     up: { dx: 0, dy: -1 },

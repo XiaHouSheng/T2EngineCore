@@ -9,6 +9,7 @@ import { getPipeByPosition } from "../core_storage/PipeStorage.js";
 import { useMachineStore } from "../stores/MachineStore.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 import { pixelToGridNoneOffset } from "./PositionConvert.js";
+import { parseMaskCell } from "./MaskUtil.js";
 
 function detectOnPlaceMachine(grid_x, grid_y, machineType, usePreMachine) {
   const metaConflict = {
@@ -332,7 +333,7 @@ function detectOnPlaceBatch(
         graphic.gridX,
         graphic.gridY,
       );
-      const maskType = maskTypeRaw ? maskTypeRaw.split(".")[0] : undefined;
+      const maskType = parseMaskCell(maskTypeRaw)?.type;
       const allowedPorts = is_belt ? ["bo", "bi"] : ["po", "pi"];
       const detect = detectOnPlaceFinalIsPort(
         baseX,

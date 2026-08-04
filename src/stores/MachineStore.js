@@ -1,4 +1,6 @@
 import { defineStore } from "pinia";
+import { PortItemContainer } from "../core_container_sub/PortItemContainer.js";
+import { PortRecipeContainer } from "../core_container_sub/PortRecipeContainer.js";
 import { markRaw } from "vue";
 
 const DEFAULT_TYPES = {
@@ -13,10 +15,14 @@ const DEFAULT_TYPES = {
     recipe_id: ["phase_trans_1-liquid_copper"],
     mask: [
       ["bi.down", "bi.down", "bi.down", "bi.down", "bi.down"],
-      ["pi.right", "ma", "ma", "ma", "po.right"],
+      ["pi.right.pi1", "ma", "ma", "ma", "po.right.po1"],
       ["ma", "ma", "ma", "ma", "ma"],
       ["bo.down", "bo.down", "bo.down", "bo.down", "bo.down"],
     ],
+    port_recipe_icon: {
+      "pi1": null,
+      "po1": null,
+    }
   },
 };
 
@@ -25,7 +31,15 @@ export const useMachineStore = defineStore("machineStore", () => {
 
   // machineContainerClasses：特殊机器的自定义容器类
   // key = machine.type，value = 继承 MachineContainer 并重写 render 方法的子类
-  const machineContainerClasses = markRaw({});
+  const machineContainerClasses = markRaw({
+    "protocol_core_1": PortItemContainer,
+    "phase_trans_1": PortRecipeContainer,
+    "phase_trans_2": PortRecipeContainer,
+    "gas_reactor_1": PortRecipeContainer,
+    "mix_pool_1": PortRecipeContainer,
+    "mix_pool_2": PortRecipeContainer,
+    "liquid_purifier_1": PortRecipeContainer,
+  });
 
   /**
    * 从外部配置向 machineTypes 注入机器定义（anchor / mask 等）

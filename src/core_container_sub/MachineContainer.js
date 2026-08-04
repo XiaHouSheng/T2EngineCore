@@ -5,76 +5,12 @@ import {
 } from "../core_middleware/PositionConvert.js";
 import { useResourcesStore } from "../stores/ResourcesStore.js";
 import { useStorageStore } from "../stores/StorageStore.js";
-
-// 端口贴图边界偏移比例（贴图留白推至格子边缘）
-// 值来自 StorageStore.default_belt_port_offset / default_pipe_port_offset
-
-/**
- * 根据端口类型、方向和偏移因子计算偏移量
- * out 类型（bo/po）：沿方向推
- * in 类型（bi/pi）：沿反方向推
- * @param {"bi"|"bo"|"pi"|"po"} type
- * @param {"up"|"down"|"left"|"right"} dir
- * @param {number} cellW
- * @param {number} cellH
- * @param {number} factor - 偏移比例
- */
-function getPortOffset(type, dir, cellW, cellH, factor) {
-  const sign = (type === "bo" || type === "po" ? 1 : -1) * factor;
-  switch (dir) {
-    case "up":
-      return { x: 0, y: -cellH * sign };
-    case "down":
-      return { x: 0, y: +cellH * sign };
-    case "left":
-      return { x: -cellW * sign, y: 0 };
-    case "right":
-      return { x: +cellW * sign, y: 0 };
-  }
-  return { x: 0, y: 0 };
-}
-
-/**
- * 从 spritesheet 裁剪一个物品图标，返回 Container（圆形背景 + Sprite）
- */
-function createItemIcon(itemId, resourcesStore, size) {
-  const iconData = resourcesStore.icons[itemId];
-  const sheetTex = resourcesStore.iconsheetTexture;
-  const container = new Container();
-  const half = size / 2;
-
-  // 圆形背景贴图
-  const bgTex = resourcesStore.textures["bg_icon_circle"];
-  const bgSprite = new Sprite(bgTex || Texture.WHITE);
-  bgSprite.anchor.set(0.5, 0.5);
-  bgSprite.width = size;
-  bgSprite.height = size;
-  container.addChild(bgSprite);
-
-  // 物品图标 Sprite
-  let sprite;
-  if (iconData && sheetTex) {
-    const [xStr, yStr] = iconData.position.trim().split(/\s+/);
-    const x = Math.abs(parseInt(xStr));
-    const y = Math.abs(parseInt(yStr));
-    const frame = new Rectangle(x, y, 64, 64);
-    const subTex = new Texture({ source: sheetTex.source, frame });
-    sprite = new Sprite(subTex);
-  } else {
-    sprite = new Sprite(Texture.WHITE);
-    sprite.tint = 0x888888;
-  }
-  sprite.anchor.set(0.5, 0.5);
-  sprite.width = size;
-  sprite.height = size;
-  container.addChild(sprite);
-
-  return container;
-}
+import { parseMaskCell } from "../core_middleware/MaskUtil.js";
 
 class MachineContainer extends Container {
   constructor(machine) {
     super();
+    this.resourcesStore = useResourcesStore();
     this.machine = machine;
     const cellSize = getCellSize();
     this.cellWidth = cellSize.width;
@@ -92,51 +28,117 @@ class MachineContainer extends Container {
     // 虚方法：默认按 overlay 配置渲染，子类可整体重写
     this.renderBody();
 
-    this.setPivotAndPosition(machine, x, y);
+    this.setPivotAndPosition(x, y);
     this.setupScaleVisibility();
+  }
+
+  /* ======== 端口贴图偏移 ======== */
+  // 端口贴图边界偏移比例（贴图留白推至格子边缘）
+  // 值来自 StorageStore.default_belt_port_offset / default_pipe_port_offset
+  /**
+   * 根据端口类型、方向和偏移因子计算偏移量
+   * out 类型（bo/po）：沿方向推
+   * in 类型（bi/pi）：沿反方向推
+   * @param {"bi"|"bo"|"pi"|"po"} type
+   * @param {"up"|"down"|"left"|"right"} dir
+   * @param {number} cellW
+   * @param {number} cellH
+   * @param {number} factor - 偏移比例
+   */
+  getPortOffset(type, dir, cellW, cellH, factor) {
+    const sign = (type === "bo" || type === "po" ? 1 : -1) * factor;
+    switch (dir) {
+      case "up":
+        return { x: 0, y: -cellH * sign };
+      case "down":
+        return { x: 0, y: +cellH * sign };
+      case "left":
+        return { x: -cellW * sign, y: 0 };
+      case "right":
+        return { x: +cellW * sign, y: 0 };
+    }
+    return { x: 0, y: 0 };
+  }
+
+  /* ======== 物品图标（圆形背景 + Sprite） ======== */
+  /**
+   * 从 spritesheet 裁剪一个物品图标，返回 Container（圆形背景 + Sprite）
+   */
+  createItemIcon(itemId, size) {
+    const iconData = this.resourcesStore.icons[itemId];
+    const sheetTex = this.resourcesStore.iconsheetTexture;
+    const container = new Container();
+
+    // 圆形背景贴图
+    const bgTex = this.resourcesStore.textures["bg_icon_circle"];
+    const bgSprite = new Sprite(bgTex || Texture.WHITE);
+    bgSprite.anchor.set(0.5, 0.5);
+    bgSprite.width = size;
+    bgSprite.height = size;
+    container.addChild(bgSprite);
+
+    // 物品图标 Sprite
+    let sprite;
+    if (iconData && sheetTex) {
+      const [xStr, yStr] = iconData.position.trim().split(/\s+/);
+      const x = Math.abs(parseInt(xStr));
+      const y = Math.abs(parseInt(yStr));
+      const frame = new Rectangle(x, y, 64, 64);
+      const subTex = new Texture({ source: sheetTex.source, frame });
+      sprite = new Sprite(subTex);
+    } else {
+      sprite = new Sprite(Texture.WHITE);
+      sprite.tint = 0x888888;
+    }
+    sprite.anchor.set(0.5, 0.5);
+    sprite.width = size;
+    sprite.height = size;
+    container.addChild(sprite);
+
+    return container;
   }
 
   /* ======== 机器主体渲染（虚方法，子类可整体重写） ======== */
   renderBody() {
     // 配置了贴图覆盖的特殊机器：跳过端口与背景渲染，直接整张贴图覆盖
-    const overlay = useResourcesStore().machineOverlays[this.machine.type];
+    const overlay = this.resourcesStore.machineOverlays[this.machine.type];
     if (overlay) {
       this.overlay = overlay;
       this.renderOverlayTexture();
       if (overlay.port) {
-        this.renderPorts(this.machine);
+        this.renderPorts();
       }
       if (overlay.background) {
         this.renderBackground();
       }
       this.renderUI(overlay.recipe, overlay.name);
     } else {
-      this.renderPorts(this.machine);
+      this.renderPorts();
       this.renderBackground();
       this.renderUI();
     }
   }
 
   /* ======== 端口渲染 ======== */
-  renderPorts(machine) {
-    const resourcesStore = useResourcesStore();
+  renderPorts() {
     const storageStore = useStorageStore();
-    const mask = machine.mask || machine.defaultMask;
+    const mask = this.machine.mask || this.machine.defaultMask;
     if (!mask) return;
 
     for (let row = 0; row < mask.length; row++) {
       for (let col = 0; col < mask[row].length; col++) {
         const cell = mask[row][col];
         if (cell === "ma") continue;
-
-        const [type, dir] = cell.split(".");
+        const parsed = parseMaskCell(cell);
+        if (!parsed) continue;
+        const { type, dir, portId } = parsed;
         let entry;
         if (type === "bi" || type === "bo") {
           const kind = type === "bi" ? "in" : "out";
-          entry = resourcesStore.beltPorts[`${kind}.${dir}`];
+          entry = this.resourcesStore.beltPorts[`${kind}.${dir}`];
         } else if (type === "pi" || type === "po") {
           const kind = type === "pi" ? "in" : "out";
-          entry = resourcesStore.pipePorts[`${kind}.${dir}`];
+          entry = this.resourcesStore.pipePorts[`${kind}.${dir}`];
         }
         if (!entry) continue;
 
@@ -153,7 +155,7 @@ class MachineContainer extends Container {
           type === "bi" || type === "bo"
             ? storageStore.default_belt_port_offset
             : storageStore.default_pipe_port_offset;
-        const offset = getPortOffset(
+        const offset = this.getPortOffset(
           type,
           dir,
           this.cellWidth,
@@ -168,17 +170,16 @@ class MachineContainer extends Container {
   }
 
   /* ======== 轴心 & 像素位置 ======== */
-  setPivotAndPosition(machine, px, py) {
+  setPivotAndPosition(px, py) {
     this.pivot.set(
-      machine.anchor[machine.rotation].x * this.machineWidth,
-      machine.anchor[machine.rotation].y * this.machineHeight,
+      this.machine.anchor[this.machine.rotation].x * this.machineWidth,
+      this.machine.anchor[this.machine.rotation].y * this.machineHeight,
     );
     this.position.set(px, py);
   }
 
   /* ======== 背景（装饰底图 + 描边 + 背景图标） ======== */
   renderBackground() {
-    const resourcesStore = useResourcesStore();
     const bg = new Container();
 
     // 描边
@@ -188,13 +189,13 @@ class MachineContainer extends Container {
     bg.addChild(gfx);
 
     // 背景大图标
-    const iconTex = resourcesStore.machineIcons[this.machine.type];
+    const iconTex = this.resourcesStore.machineIcons[this.machine.type];
     if (iconTex) {
       const icon = new Sprite(iconTex);
       icon.anchor.set(0.5, 0.5);
       icon.x = this.machineWidth / 2;
       icon.y = this.machineHeight / 2;
-      icon.alpha = 0.5;
+      icon.alpha = 0.6;
       const iconScale =
         Math.min(
           this.machineWidth / iconTex.width,
@@ -209,14 +210,13 @@ class MachineContainer extends Container {
 
   /* ======== 贴图覆盖（特殊机器，替代背景渲染） ======== */
   renderOverlayTexture() {
-    const resourcesStore = useResourcesStore();
-    const overlay = resourcesStore.machineOverlays[this.machine.type];
+    const overlay = this.resourcesStore.machineOverlays[this.machine.type];
     if (!overlay) return;
 
     // 优先取 machineIcons，其次取 textures
     const tex =
-      resourcesStore.machineIcons[overlay.texture] ||
-      resourcesStore.textures[overlay.texture];
+      this.resourcesStore.machineIcons[overlay.texture] ||
+      this.resourcesStore.textures[overlay.texture];
     if (!tex) return;
     const sprite = new Sprite(tex);
     sprite.anchor.set(0.5, 0.5);
@@ -274,7 +274,7 @@ class MachineContainer extends Container {
   /** 只重新渲染配方图标部分（不清除名称和布局） */
   refreshUI() {
     // 清除旧的配方容器
-    if (!this.overlay.recipe) return; 
+    if (this.overlay && !this.overlay.recipe) return; 
     if (this.recipeContainer) {
       this.uiContainer.removeChild(this.recipeContainer);
       this.recipeContainer.destroy({ children: true });
@@ -286,7 +286,6 @@ class MachineContainer extends Container {
 
   /** 渲染配方图标的内部逻辑，使用 machine.now_recipe */
   renderRecipeUI() {
-    const resourcesStore = useResourcesStore();
     const { machine, machineWidth, machineHeight, cellWidth, cellHeight } =
       this;
     const cx = machineWidth / 2;
@@ -295,7 +294,7 @@ class MachineContainer extends Container {
     // 配方图标
     const recipeIds = machine.recipe_id;
     if (!recipeIds || recipeIds.length === 0) return;
-    const recipe = resourcesStore.recipes[machine.now_recipe || recipeIds[0]];
+    const recipe = this.resourcesStore.recipes[machine.now_recipe || recipeIds[0]];
     if (!recipe) return;
 
     const inIds = Object.keys(recipe.in || {});
@@ -307,7 +306,7 @@ class MachineContainer extends Container {
     const vgap = iconSize * 0.6;
 
     const place = (itemId, px, py) => {
-      const icon = createItemIcon(itemId, resourcesStore, iconSize);
+      const icon = this.createItemIcon(itemId, iconSize);
       icon.x = px;
       icon.y = py;
       this.recipeContainer.addChild(icon);
@@ -356,10 +355,16 @@ class MachineContainer extends Container {
     };
 
     update(storageStore.scale);
-    storageStore.$subscribe(() => {
+    this.scaleSubscriber = storageStore.$subscribe(() => {
       update(storageStore.scale);
     });
   }
+
+  destroy() {
+    if (this.scaleSubscriber) this.scaleSubscriber();
+    super.destroy();
+  }
+
 }
 
 export { MachineContainer };

@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite } from "pixi.js";
 import { getCellSize } from "../core_middleware/PositionConvert";
 import { useResourcesStore } from "../stores/ResourcesStore";
+import { parseMaskCell } from "../core_middleware/MaskUtil";
 
 class IndicatorGraphic extends Container {
   constructor(
@@ -95,31 +96,31 @@ class IndicatorGraphic extends Container {
     const resourcesStore = useResourcesStore();
     entity.mask.forEach((col, y) => {
       col.forEach((mask_, x) => {
-        const [type, dir] = mask_.split(".");
-        if (dir) {
-          const offset = {
-            x:
-              type.split("")[1] == "o"
-                ? mapOutOffset[dir].x * this.cellWidth
-                : -mapOutOffset[dir].x * this.cellWidth,
-            y:
-              type.split("")[1] == "o"
-                ? mapOutOffset[dir].y * this.cellHeight
-                : -mapOutOffset[dir].y * this.cellHeight,
-          };
-          const arrow = new Sprite({
-            texture: resourcesStore.textures[`arrow_${dir}`],
-            anchor: 0.5,
-            position: {
-              x: x * this.cellWidth + this.cellWidth * 0.5 + offset.x,
-              y: y * this.cellHeight + this.cellHeight * 0.5 + offset.y,
-            },
-          });
-          arrow.alpha = 0.8;
-          arrow.tint = type == "bi" ? "yellow" : "black";
-          arrow.setSize(this.cellWidth * 0.3, this.cellHeight * 0.3);
-          this.addChild(arrow);
-        }
+        const parsed = parseMaskCell(mask_);
+        if (!parsed || !parsed.dir) return;
+        const { type, dir } = parsed;
+        const offset = {
+          x:
+            type.split("")[1] == "o"
+              ? mapOutOffset[dir].x * this.cellWidth
+              : -mapOutOffset[dir].x * this.cellWidth,
+          y:
+            type.split("")[1] == "o"
+              ? mapOutOffset[dir].y * this.cellHeight
+              : -mapOutOffset[dir].y * this.cellHeight,
+        };
+        const arrow = new Sprite({
+          texture: resourcesStore.textures[`arrow_${dir}`],
+          anchor: 0.5,
+          position: {
+            x: x * this.cellWidth + this.cellWidth * 0.5 + offset.x,
+            y: y * this.cellHeight + this.cellHeight * 0.5 + offset.y,
+          },
+        });
+        arrow.alpha = 0.8;
+        arrow.tint = type == "bi" ? "yellow" : "black";
+        arrow.setSize(this.cellWidth * 0.3, this.cellHeight * 0.3);
+        this.addChild(arrow);
       });
     });
   }

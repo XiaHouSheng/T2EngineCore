@@ -5,6 +5,7 @@
  * - 封装 storageStore.machines 的读写
  * - 元数据字段（id/type/name/size/mask/anchor/recipe_id）只提供 getter
  * - 运行时状态字段（now_recipe/now_mode）提供 getter + setter
+ * - 端口配方图标字段（port_recipe_icon，{ 端口id: 图标 }）提供 getter + set(key, value)
  * - 通过机器 id 或网格坐标定位机器
  */
 
@@ -81,6 +82,20 @@ function setNowMode(machine, mode) {
   machine.now_mode = mode;
 }
 
+/* ============================== 端口配方图标 ============================== */
+
+/** 获取机器端口配方图标（key 省略时返回整个映射） */
+function getPortRecipeIcon(machine, key) {
+  const map = machine.port_recipe_icon ?? {};
+  return key === undefined ? map : map[key] ?? null;
+}
+
+/** 设置机器端口配方图标：set(key, value) */
+function setPortRecipeIcon(machine, key, value) {
+  if (!machine.port_recipe_icon) machine.port_recipe_icon = {};
+  machine.port_recipe_icon[key] = value;
+}
+
 /* ============================== 容器对象 ============================== */
 
 /** 获取机器的 PIXI 容器对象（用于渲染更新） */
@@ -123,6 +138,9 @@ export {
   setNowRecipe,
   getNowMode,
   setNowMode,
+  // 端口配方图标
+  getPortRecipeIcon,
+  setPortRecipeIcon,
   // 容器
   getMachineObject,
   // 批量

@@ -233,7 +233,7 @@ export const useResourcesStore = defineStore("resourcesStore", () => {
   }
 
   /**
-   * 从 machines_1_4.json 配置向 machines 注入 anchor 和 mask
+   * 从 machines.json 配置向 machines 注入 anchor 和 mask
    * 跳过黑名单中的机器
    * @param {Record<string, {id, anchor?, mask?}>} configMap
    */

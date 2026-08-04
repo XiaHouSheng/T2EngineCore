@@ -40,6 +40,7 @@ import {
   makeDebouncedDelay,
   makeClickDetector,
 } from "../core_middleware/IndicatorUtil.js";
+import { parseMaskCell } from "../core_middleware/MaskUtil.js";
 import {
   S,
   initIndicator,
@@ -128,8 +129,9 @@ function onStartPlace() {
     const beltType = getBeltByPosition(event.gridX, event.gridY)?.type;
     const pipeType = getPipeByPosition(event.gridX, event.gridY)?.type;
     const maskTypeRaw = getMachineMaskTypeByPosition(event.gridX, event.gridY);
-    const maskType = maskTypeRaw ? maskTypeRaw.split(".")[0] : undefined;
-    const maskDir = maskTypeRaw ? maskTypeRaw.split(".")[1] : undefined;
+    const parsed = parseMaskCell(maskTypeRaw);
+    const maskType = parsed?.type;
+    const maskDir = parsed?.dir;
     const is_node =
       (S.nowPlaceIsBelt && beltType != null && beltType != "default") ||
       (!S.nowPlaceIsBelt && pipeType != null && pipeType != "default");
@@ -163,7 +165,7 @@ function onStartPlace() {
     const beltType = getBeltByPosition(event.gridX, event.gridY)?.type;
     const pipeType = getPipeByPosition(event.gridX, event.gridY)?.type;
     const maskTypeRaw = getMachineMaskTypeByPosition(event.gridX, event.gridY);
-    const maskType = maskTypeRaw ? maskTypeRaw.split(".")[0] : undefined;
+    const maskType = parseMaskCell(maskTypeRaw)?.type;
 
     const config = {
       skip_first,
