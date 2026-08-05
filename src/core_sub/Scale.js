@@ -15,8 +15,8 @@ function onWheelChange(event) {
   const oldScale = storageStore.scale;
   const worldX = (mouseX - offsetX) / oldScale;
   const worldY = (mouseY - offsetY) / oldScale;
-  const zoomRate = event.deltaY > 0 ? 0.95 : 1.05;
-  let scale = Math.max(0.8, Math.min(4, storageStore.scale * zoomRate));
+  const zoomRate = event.deltaY > 0 ? 0.85 : 1.15;
+  let scale = Math.max(storageStore.min_scale, Math.min(storageStore.max_scale, storageStore.scale * zoomRate));
   const newOffsetX = mouseX - worldX * scale;
   const newOffsetY = mouseY - worldY * scale;
   storageStore.scale = scale;
@@ -32,7 +32,7 @@ function onWheelChange(event) {
 
 function moveViewLeft() {
   if (!storageStore) storageStore = useStorageStore();
-  let step = storageStore.base_step / storageStore.scale;
+  let step = storageStore.base_step / 1;
   const newOffsetX = storageStore.offset_position.x - step;
   const newOffsetY = storageStore.offset_position.y;
   const {
@@ -46,7 +46,7 @@ function moveViewLeft() {
 
 function moveViewRight() {
   if (!storageStore) storageStore = useStorageStore();
-  let step = storageStore.base_step / storageStore.scale;
+  let step = storageStore.base_step / 1;
   const newOffsetX = storageStore.offset_position.x + step;
   const newOffsetY = storageStore.offset_position.y;
   const {
@@ -60,7 +60,7 @@ function moveViewRight() {
 
 function moveViewUp() {
   if (!storageStore) storageStore = useStorageStore();
-  let step = storageStore.base_step / storageStore.scale;
+  let step = storageStore.base_step / 1;
   const newOffsetX = storageStore.offset_position.x;
   const newOffsetY = storageStore.offset_position.y - step;
   const {
@@ -74,7 +74,7 @@ function moveViewUp() {
 
 function moveViewDown() {
   if (!storageStore) storageStore = useStorageStore();
-  let step = storageStore.base_step / storageStore.scale;
+  let step = storageStore.base_step / 1;
   const newOffsetX = storageStore.offset_position.x;
   const newOffsetY = storageStore.offset_position.y + step;
   const {

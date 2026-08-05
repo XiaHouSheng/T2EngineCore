@@ -4,6 +4,30 @@ import { useResourcesStore } from "../stores/ResourcesStore.js";
 
 const BASE = import.meta.env.BASE_URL; // 适配 Vite base 路径
 
+/**
+ * 为独立 PNG 纹理统一设置采样策略（PixiJS v8）：
+ * - scaleMode: linear        —— 平滑插值
+ * - autoGenerateMipmaps      —— 缩小/大缩小时生成 mipmap，避免闪烁与噪点
+ * - mipmapFilter: linear     —— mipmap 间线性过渡
+ * - maxAnisotropy: 4         —— 改善斜向大角度采样的模糊
+ * 注意：icons.webp 雪碧图因按帧裁切子纹理，不应用 mipmap（避免边缘出血）。
+ */
+function applyBitmapTextureConfig(texture) {
+  const source = texture.source;
+  source.scaleMode = "linear";
+  source.autoGenerateMipmaps = true;
+  source.mipmapFilter = "linear";
+  if (source.style) {
+    source.style.maxAnisotropy = 4;
+    source.style.update?.();
+  }
+  source.update?.();
+  if (source.autoGenerateMipmaps) {
+    source.updateMipmaps?.();
+  }
+  return texture;
+}
+
 const CONFIG_PATHS = {
   machines: `${BASE}configs/machines.json`,
   machine_config: `${BASE}configs/machines.json`,
@@ -201,7 +225,10 @@ export async function loadTextures() {
     const resStore = useResourcesStore();
     const entries = await Promise.all(
       TEXTURE_FILES.map((name) =>
-        Assets.load(`${BASE}textures/${name}.png`).then((tex) => [name, tex]),
+        Assets.load(`${BASE}textures/${name}.png`).then((tex) => [
+          name,
+          applyBitmapTextureConfig(tex),
+        ]),
       ),
     );
     const map = Object.fromEntries(entries);
@@ -223,7 +250,10 @@ export async function loadMachineIcons() {
     const resStore = useResourcesStore();
     const entries = await Promise.all(
       MACHINE_ICON_FILES.map((name) =>
-        Assets.load(`${BASE}machine_icons/${name}.png`).then((tex) => [name, tex]),
+        Assets.load(`${BASE}machine_icons/${name}.png`).then((tex) => [
+          name,
+          applyBitmapTextureConfig(tex),
+        ]),
       ),
     );
     const map = Object.fromEntries(entries);

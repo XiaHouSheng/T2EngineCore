@@ -83,9 +83,11 @@ export const useCommandStore = defineStore("command", () => {
   for (let key in command_handle) {
     command_handle[key] = proxyForHandle(command_handle[key], key);
   }
+  /*
   for (let key in zomm_command_handle) {
     zomm_command_handle[key] = proxyForHandle(zomm_command_handle[key], key, 0);
   }
+  */
 
   return {
     keyboard_base_command,

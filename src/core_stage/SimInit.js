@@ -38,7 +38,8 @@ function proxyProcessPositionWithScale(event) {
 }
 
 function drawGridLines() {
-  const grid = new Graphics();
+  // roundPixels: 绘制时把坐标对齐到整数像素，避免 0.5px 偏移导致的线条发虚
+  const grid = new Graphics({ roundPixels: true });
   if (!storageStore) storageStore = useStorageStore();
   const row = storageStore.rowCount;
   const col = storageStore.colCount;

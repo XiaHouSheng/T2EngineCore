@@ -26,14 +26,13 @@ function handleDragStart(event) {
 function handleDragMove(event) {
   lazyLoad();
   if (commandStore.select_command != CMD_DEFAULT) return;
-  const { scale } = storageStore;
   end_pixel_x = event.screen.x;
   end_pixel_y = event.screen.y;
   if (start_pixel_x == null || start_pixel_y == null) return;
   // 屏幕位移换算为视口世界位移（除以 scale），并相对按下时偏移绝对定位，
   // 避免在 mousemove 里基于已更新的 offset 累加导致位移成倍累积
-  const deltaX = (end_pixel_x - start_pixel_x) / scale;
-  const deltaY = (end_pixel_y - start_pixel_y) / scale;
+  const deltaX = (end_pixel_x - start_pixel_x) / 1;
+  const deltaY = (end_pixel_y - start_pixel_y) / 1;
   const { confirmOffsetX, confirmOffsetY } = setPosition(
     start_offset_x + deltaX,
     start_offset_y + deltaY,

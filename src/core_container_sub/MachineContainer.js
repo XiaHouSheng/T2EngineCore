@@ -10,9 +10,10 @@ import { parseMaskCell } from "../core_middleware/MaskUtil.js";
 class MachineContainer extends Container {
   constructor(machine) {
     super();
-    this.resourcesStore = useResourcesStore();
-    this.machine = machine;
     const cellSize = getCellSize();
+    this.resourcesStore = useResourcesStore();
+    this.storageStore = useStorageStore();
+    this.machine = machine;
     this.cellWidth = cellSize.width;
     this.cellHeight = cellSize.height;
     this.machineWidth = machine.gridWidth * this.cellWidth;
@@ -22,14 +23,16 @@ class MachineContainer extends Container {
 
     this.portContainer = new Container();
     this.uiContainer = new Container();
+    this.recipeContainer = new Container();
     this.addChild(this.portContainer);
     this.addChild(this.uiContainer);
+    this.uiContainer.addChild(this.recipeContainer);
 
     // 虚方法：默认按 overlay 配置渲染，子类可整体重写
     this.renderBody();
-
     this.setPivotAndPosition(x, y);
-    this.setupScaleVisibility();
+    // 用当前 scale 初始化显隐状态（后续由全局 scale 订阅分发调用）
+    this.onScaleChange(this.storageStore.scale);
   }
 
   /* ======== 端口贴图偏移 ======== */
@@ -104,6 +107,7 @@ class MachineContainer extends Container {
     const overlay = this.resourcesStore.machineOverlays[this.machine.type];
     if (overlay) {
       this.overlay = overlay;
+      // 整张贴图覆盖（特殊机器主体）
       this.renderOverlayTexture();
       if (overlay.port) {
         this.renderPorts();
@@ -178,16 +182,22 @@ class MachineContainer extends Container {
     this.position.set(px, py);
   }
 
+  /* ======== 描边渲染 ======== */
+  renderBorderLine(scale = 1) {
+    if (!this.backgroundContainer) return;
+    if (this.borderGraphic) this.borderGraphic.destroy();
+    this.borderGraphic = new Graphics({ roundPixels: true });
+    const cal_width = this.cellHeight * scale * 0.025;
+    this.borderGraphic.rect(0, 0, this.machineWidth, this.machineHeight);
+    this.borderGraphic.stroke({ width: cal_width, color: 0x212121 });
+    this.backgroundContainer.addChild(this.borderGraphic);
+  }
+
   /* ======== 背景（装饰底图 + 描边 + 背景图标） ======== */
   renderBackground() {
-    const bg = new Container();
-
+    this.backgroundContainer = new Container();
     // 描边
-    const gfx = new Graphics();
-    gfx.rect(0, 0, this.machineWidth, this.machineHeight);
-    gfx.stroke({ width: 2, color: 0x212121 });
-    bg.addChild(gfx);
-
+    this.renderBorderLine();
     // 背景大图标
     const iconTex = this.resourcesStore.machineIcons[this.machine.type];
     if (iconTex) {
@@ -196,16 +206,11 @@ class MachineContainer extends Container {
       icon.x = this.machineWidth / 2;
       icon.y = this.machineHeight / 2;
       icon.alpha = 0.6;
-      const iconScale =
-        Math.min(
-          this.machineWidth / iconTex.width,
-          this.machineHeight / iconTex.height,
-        ) - 0.2;
-      icon.scale.set(iconScale);
-      bg.addChild(icon);
+      icon.width = this.machineWidth * 0.8;
+      icon.height = this.machineHeight * 0.8;
+      this.backgroundContainer.addChild(icon);
     }
-
-    this.addChildAt(bg, 0);
+    this.addChildAt(this.backgroundContainer, 0);
   }
 
   /* ======== 贴图覆盖（特殊机器，替代背景渲染） ======== */
@@ -241,40 +246,43 @@ class MachineContainer extends Container {
     this.addChildAt(sprite, 0);
   }
 
-  /* ======== UI（机器名称 + 配方图标） ======== */
-  renderUI(recipe = true, name = true) {
+  /** 渲染机器名称 */
+  renderMachineName() {
+    if (this.nameText) this.nameText.destroy();
     const { machineWidth, machineHeight, cellWidth, cellHeight } = this;
     const cx = machineWidth / 2;
     const cy = machineHeight / 2;
-
     // 机器名称
-    if (this.machine.name && name) {
+    if (this.machine.name) {
       this.nameText = new Text({
         fontFamily: "SimHei",
         text: this.machine.name,
         style: {
-          fontSize: Math.min(cellWidth, cellHeight) * 0.35,
+          fontSize: cellWidth * 4,
           fill: 0x000000,
         },
       });
+      this.nameText.scale.set((machineWidth * 0.8) / this.nameText.width);
       this.nameText.anchor.set(0.5, 0.5);
+      this.nameText.roundPixels = true;
       this.nameText.x = cx;
       this.nameText.y = cy;
       this.uiContainer.addChild(this.nameText);
     }
+  }
 
+  /* ======== UI（机器名称 + 配方图标） ======== */
+  renderUI(recipe = true, name = true) {
+    // 渲染机器名称
+    if (name) this.renderMachineName();
     // 配方图标
-    if (recipe) {
-      this.recipeContainer = new Container();
-      this.uiContainer.addChild(this.recipeContainer);
-      this.renderRecipeUI();
-    }
+    if (recipe) this.renderRecipeUI();
   }
 
   /** 只重新渲染配方图标部分（不清除名称和布局） */
-  refreshUI() {
+  refreshRecipeUI() {
     // 清除旧的配方容器
-    if (this.overlay && !this.overlay.recipe) return; 
+    if (this.overlay && !this.overlay.recipe) return;
     if (this.recipeContainer) {
       this.uiContainer.removeChild(this.recipeContainer);
       this.recipeContainer.destroy({ children: true });
@@ -294,7 +302,8 @@ class MachineContainer extends Container {
     // 配方图标
     const recipeIds = machine.recipe_id;
     if (!recipeIds || recipeIds.length === 0) return;
-    const recipe = this.resourcesStore.recipes[machine.now_recipe || recipeIds[0]];
+    const recipe =
+      this.resourcesStore.recipes[machine.now_recipe || recipeIds[0]];
     if (!recipe) return;
 
     const inIds = Object.keys(recipe.in || {});
@@ -343,28 +352,22 @@ class MachineContainer extends Container {
     }
   }
 
-  /* ======== scale 驱动的配方显隐 ======== */
-  setupScaleVisibility() {
-    const storageStore = useStorageStore();
-    const THRESHOLD = 1.2;
-
-    const update = (scale) => {
-      const show = scale >= THRESHOLD;
-      this.recipeContainer.visible = show;
-      if (this.nameText) this.nameText.alpha = show ? 0.7 : 1.0;
-    };
-
-    update(storageStore.scale);
-    this.scaleSubscriber = storageStore.$subscribe(() => {
-      update(storageStore.scale);
-    });
+  /* ======== scale 驱动的配方显隐（由全局 scale 订阅统一分发调用） ======== */
+  onScaleChange(scale) {
+    // 配方显隐阈值位于缩放区间 [min_scale, max_scale] 内的比例位置
+    const threshold_ratio = 0.5;
+    const threshold =
+      this.storageStore.min_scale +
+      (this.storageStore.max_scale - this.storageStore.min_scale) *
+        threshold_ratio;
+    const show = scale >= threshold;
+    this.recipeContainer.visible = show;
+    if (this.nameText) this.nameText.alpha = show ? 0.2 : 1.0;
   }
 
   destroy() {
-    if (this.scaleSubscriber) this.scaleSubscriber();
     super.destroy();
   }
-
 }
 
 export { MachineContainer };

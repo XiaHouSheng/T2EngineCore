@@ -12,9 +12,12 @@ export const useStorageStore = defineStore("StorageStore", () => {
   const cellHeight = computed(() => height.value / rowCount.value);
   // 缩放比例以及偏移量
   const scale = ref(1);
+  const min_scale = ref(0.8);
+  const max_scale = ref(4);
   const offset_position = ref({ x: 0, y: 0 });
   const max_offset = ref(160);
-  const base_step = ref(20);
+  // 视图移动步长 = 单个格子的世界像素，随画布尺寸/行列数自动推导
+  const base_step = Math.min(cellWidth.value, cellHeight.value) * 2;
   const default_pipe_port_offset = 0.125
   const default_belt_port_offset = 0.3175
   // 机器存储
@@ -68,6 +71,8 @@ export const useStorageStore = defineStore("StorageStore", () => {
     cellWidth,
     cellHeight,
     scale,
+    min_scale,
+    max_scale,
     offset_position,
     max_offset,
     base_step,

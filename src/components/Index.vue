@@ -79,7 +79,7 @@ function confirmRecipe() {
   if (!m || !selectedRecipeId.value) return;
   setNowRecipe(m, selectedRecipeId.value);
   const obj = getMachineObject(m.id);
-  if (obj?.refreshUI) obj.refreshUI();
+  if (obj?.refreshRecipeUI) obj.refreshRecipeUI();
   showRecipeSelector.value = false;
 }
 function cancelRecipe() {
@@ -130,6 +130,8 @@ function cancelPlaceNode() {
     width: storageStore.width,
     height: storageStore.height,
     backgroundColor: storageStore.backgroundColor,
+    resolution: Math.min(window.devicePixelRatio || 1, 2),
+    autoDensity: true,
   });
   canvas.value.appendChild(app.canvas);
 })();

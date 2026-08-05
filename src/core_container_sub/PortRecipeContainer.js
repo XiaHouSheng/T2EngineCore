@@ -65,8 +65,8 @@ export class PortRecipeContainer extends MachineContainer {
     }
   }
 
-  refreshUI() {
-    super.refreshUI();
+  refreshRecipeUI() {
+    super.refreshRecipeUI();
     this.renderRecipePort(true);
   }
 }
