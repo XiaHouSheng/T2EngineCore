@@ -2,8 +2,11 @@ import {
   useCommandStore,
   CMD_DEFAULT,
   CMD_CANCEL,
-} from "../stores/KeyBoardStore.js";
-import { onStartPlaceMachine, onStartPlaceNode } from "../core_sub/Indicator.js";
+} from "../stores/CommandStore.js";
+import {
+  onStartPlaceMachine,
+  onStartPlaceNode,
+} from "../core_sub/Indicator.js";
 
 let commandStore = null;
 
@@ -26,8 +29,14 @@ function handleKeyboardForZoom(event) {
   if (func) func();
 }
 
+function handleKeyboardUp(keyboardEvent) {
+  if (!commandStore) commandStore = useCommandStore();
+  commandStore.is_ctrl = keyboardEvent.ctrlKey;
+}
+
 function handleKeyboard(keyboardEvent) {
   if (!commandStore) commandStore = useCommandStore();
+  commandStore.is_ctrl = keyboardEvent.ctrlKey;
   const key = keyboardEvent.key.toLowerCase();
 
   let command = commandStore.keyboard_command[key];
@@ -86,4 +95,10 @@ function handleKeyboard(keyboardEvent) {
   }
 }
 
-export { handleKeyboard, handleKeyboardForZoom, dispatchPlaceMachineHandle, dispatchPlaceNodeHandle };
+export {
+  handleKeyboard,
+  handleKeyboardUp,
+  handleKeyboardForZoom,
+  dispatchPlaceMachineHandle,
+  dispatchPlaceNodeHandle,
+};

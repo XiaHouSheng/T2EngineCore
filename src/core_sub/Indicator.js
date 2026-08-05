@@ -31,9 +31,10 @@ import {
   detectOnPlaceFinalIsNode,
   detectOnPlaceMachine,
   detectOnPlaceNode,
+  detectOnMoveMask,
   checkMachineBounds,
 } from "../core_middleware/ConflictDetect.js";
-import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore.js";
+import { useCommandStore, CMD_DEFAULT } from "../stores/CommandStore.js";
 import {
   scanAdjacentPort,
   directionConstraint,
@@ -476,9 +477,19 @@ function onStartPlaceMachine(typeName) {
 
     if (boundsConflict || entityConflict) return;
 
+    // 连续放置：按住 Ctrl 时，placeMachine 内部克隆 + 新 id（不污染 S.pre_machine），
+    // 且不取消，保持放置状态以便继续
+    if (useCommandStore().is_ctrl) {
+      placeMachine(S.pre_machine, gx, gy, true);
+      return;
+    }
+
     placeMachine(S.pre_machine, gx, gy);
     setBaseGrid(null, null);
     setNowGrid(null, null);
+
+    
+
     onCancel();
   };
 
@@ -702,9 +713,23 @@ function onStartSelectMove(name, is_copy = false) {
       return;
     }
     // Step 4: 放置到最终位置
+    // 复制模式下 placeXxx 内部会克隆并生成新 id，避免共享 meta 对象污染 storage；
+    // 这里仍需同步 meta 基准到放置位置，保证连续放置以新副本为锚点
     Object.keys(S.selectGraphics.machines).forEach((id) => {
       const m = S.metaRotateMove.machines[id];
-      placeMachine(m, m.gridX + gridDeltaX, m.gridY + gridDeltaY, is_copy);
+      placeMachine(
+        m,
+        m.gridX + gridDeltaX,
+        m.gridY + gridDeltaY,
+        is_copy,
+      );
+      // center 也需同步：detectOnMoveMask 基于 centerX/centerY 计算机器区域
+      if (is_copy) {
+        m.gridX += gridDeltaX;
+        m.gridY += gridDeltaY;
+        m.centerX += gridDeltaX * cellWidth;
+        m.centerY += gridDeltaY * cellHeight;
+      }
     });
     Object.keys(S.selectGraphics.belts).forEach((id) => {
       const b = S.metaRotateMove.belts[id];
@@ -716,6 +741,10 @@ function onStartSelectMove(name, is_copy = false) {
         b.out,
         is_copy,
       );
+      if (is_copy) {
+        b.gridX += gridDeltaX;
+        b.gridY += gridDeltaY;
+      }
     });
     Object.keys(S.selectGraphics.pipes).forEach((id) => {
       const p = S.metaRotateMove.pipes[id];
@@ -727,7 +756,24 @@ function onStartSelectMove(name, is_copy = false) {
         p.out,
         is_copy,
       );
+      if (is_copy) {
+        p.gridX += gridDeltaX;
+        p.gridY += gridDeltaY;
+      }
     });
+    // 连续放置：按住 Ctrl 且处于复制模式时，不执行取消、不结束移动，
+    // 而是以当前鼠标位置为新的基准中心点，便于继续放置下一次副本
+    if (is_copy && useCommandStore().is_ctrl) {
+      S.base_pixel_x = x;
+      S.base_pixel_y = y;
+      S.now_pixel_x = x;
+      S.now_pixel_y = y;
+      S.last_delta_x = null;
+      S.last_delta_y = null;
+      // 刷新当前基准位置的冲突（刚放置的实体即在此处），避免原地重复放置
+      generateConflictMask(detectOnMoveMask(S.metaRotateMove, 0, 0));
+      return;
+    }
     setSelectMoving(false);
     onCancel();
   };

@@ -42,7 +42,7 @@ import {
   drawMaskFromPosition,
   drawSpecialMask,
 } from "../core_stage/IndicatorStage.js";
-import { handleKeyboard, handleKeyboardForZoom } from "../core_middleware/KeyboardHandle.js";
+import { handleKeyboard, handleKeyboardUp,  handleKeyboardForZoom } from "../core_middleware/KeyboardHandle.js";
 import {
   findBeltNearBy,
   getBeltByPosition,
@@ -139,7 +139,7 @@ function cancelPlaceNode() {
 onMounted(() => {
   window.addEventListener("keydown", handleKeyboard);
   window.addEventListener("keydown", handleKeyboardForZoom);
-
+  window.addEventListener("keyup", handleKeyboardUp);
   // 机器点击 → EventHandle → 打开配方选择
   setMachineClickHandler((machine) => openRecipeSelector(machine));
 });

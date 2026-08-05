@@ -47,8 +47,8 @@ function createMachine(typename) {
 
 // 注入position
 function placeMachine(machine, x, y, is_copy = false) {
-  // 如果是复制操作，生成新的 id
-  if (is_copy) machine.id = nanoid();
+  // 复制操作：克隆对象并生成新 id，避免与调用方的 meta 对象共享引用
+  if (is_copy) machine = { ...machine, id: nanoid() };
   machine.gridX = x;
   machine.gridY = y;
   saveMachine(machine, drawMachine(machine));

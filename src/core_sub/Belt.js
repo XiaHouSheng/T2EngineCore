@@ -38,8 +38,10 @@ function createBeltNode(type) {
 }
 
 function placeBelt(belt, x, y, in_dir, out_dir, is_copy = false) {
-  // 如果是复制操作，生成新的 id
-  if (is_copy) belt.id = nanoid();
+  // 复制操作：克隆对象并生成新 id，避免与调用方的 meta 对象共享引用
+  if (is_copy) {
+    belt = { ...belt, id: nanoid() };
+  }
 
   // 交叉检测：当前位置已有直线 default 带且方向垂直，替换为 cross
   if (belt.type === "default") {

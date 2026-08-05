@@ -24,6 +24,7 @@ import { proxyForHandle } from "../core_middleware/IndicatorUtil.js";
 export const useCommandStore = defineStore("command", () => {
   const select_command = ref("default");
   const last_command = ref("default");
+  const is_ctrl = ref(false)
 
   const keyboard_command = markRaw({
     e: "PLACE_BELT",
@@ -95,6 +96,7 @@ export const useCommandStore = defineStore("command", () => {
     keyboard_sub_command,
     select_command,
     last_command,
+    is_ctrl,
     command_handle,
     zomm_command_handle,
     onCancel,

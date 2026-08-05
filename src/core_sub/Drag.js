@@ -1,5 +1,5 @@
 import { useStorageStore } from "../stores/StorageStore";
-import { useCommandStore, CMD_DEFAULT } from "../stores/KeyBoardStore";
+import { useCommandStore, CMD_DEFAULT } from "../stores/CommandStore";
 import { setPosition } from "../core_stage/ScaleStage";
 
 let start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y;
