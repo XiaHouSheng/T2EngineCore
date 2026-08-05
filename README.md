@@ -32,6 +32,10 @@ SimulationEngine is a 2D grid-based simulation engine for factory logistics game
 - Belt / Pipe four-direction ports (`bo`/`bi`/`po`/`pi`)
 - **Placement workflow**: click machine button → mask follows mouse with real-time conflict/boundary preview → click to confirm placement
 - **Placement rotation**: press R during placement to rotate the preview mask
+- **Continuous placement**: hold Ctrl and click to place the same machine repeatedly without exiting placement mode
+- **Multi-port mask**: mask cells carry per-port ids (`bi`/`bo`/`pi`/`po` + id), uniformly parsed via MaskUtil; ports render item icons via PortItemContainer
+- **Dynamic container dispatch**: custom container classes per machine type can be registered in MachineStore and are auto-dispatched in `drawMachine` (with `renderBody` as the extension point)
+- **Icon overlay**: special machines render full-texture overlays plus recipe/name UI
 - Hover highlight feedback
 
 ## Belt & Pipe System
@@ -51,6 +55,7 @@ Both systems share a unified architecture:
 - Box select by dragging, move, rotate, delete, copy
 - **Long-press** any machine to instantly enter move mode with offset preview
 - **Rotate during move**: press R to rotate selected entities around their center
+- **Continuous copy**: in copy mode (Ctrl + C), keep holding Ctrl and click to place multiple copies — the base center re-anchors after each placement without exiting; release Ctrl to place once and exit
 - All operations support real-time preview and collision/boundary detection
 
 ## Collision Detection
@@ -168,7 +173,7 @@ src/
 | M | Move selection |
 | R | Rotate (preview / selection during move) |
 | F | Delete selection |
-| Ctrl + C | Copy selection |
+| Ctrl + C | Copy selection (hold Ctrl + click to place continuously) |
 | Esc | Cancel / exit current mode |
 | Scroll | Zoom in/out |
 | Drag | Pan viewport |
