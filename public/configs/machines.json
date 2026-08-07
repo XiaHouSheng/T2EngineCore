@@ -223,44 +223,6 @@
       "pi1": null
     }
   },
-  "gas_pump_1": {
-    "id": "gas_pump_1",
-    "name": "气体收集泵",
-    "gridWidth": 3,
-    "gridHeight": 3,
-    "anchor": [
-      {
-        "x": 0.5,
-        "y": 0.5
-      },
-      {
-        "x": 0.5,
-        "y": 0.5
-      }
-    ],
-    "mask": [
-      [
-        "ma",
-        "ma",
-        "ma"
-      ],
-      [
-        "ma",
-        "ma",
-        "ma"
-      ],
-      [
-        "ma",
-        "ma",
-        "ma"
-      ]
-    ],
-    "recipe_id": [
-      "gas_inert",
-      "gas_xiranite"
-    ],
-    "port_recipe_icon": {}
-  },
   "gas_reactor_1": {
     "id": "gas_reactor_1",
     "name": "气体反应炉",
@@ -318,9 +280,9 @@
     ],
     "port_recipe_icon": {
       "pi1": null,
-      "po·1": null,
+      "po1": null,
       "pi2": null,
-      "po·2": null
+      "po2": null
     }
   },
   "grinder_1": {
@@ -474,7 +436,7 @@
     ],
     "port_recipe_icon": {
       "pi1": null,
-      "po·1": null,
+      "po1": null,
       "pi2": null
     }
   },
@@ -542,9 +504,9 @@
     ],
     "port_recipe_icon": {
       "pi1": null,
-      "po·1": null,
+      "po1": null,
       "pi2": null,
-      "po·2": null
+      "po2": null
     }
   },
   "mix_pool_2": {
@@ -616,9 +578,9 @@
     ],
     "port_recipe_icon": {
       "pi1": null,
-      "po·1": null,
+      "po1": null,
       "pi2": null,
-      "po·2": null
+      "po2": null
     }
   },
   "phase_trans_1": {
@@ -690,9 +652,9 @@
     "port_recipe_icon": {
       "pi1": null,
       "pi2": null,
-      "po·1": null,
+      "po1": null,
       "pi3": null,
-      "po·2": null
+      "po2": null
     }
   },
   "phase_trans_2": {
@@ -762,9 +724,9 @@
     "port_recipe_icon": {
       "pi1": null,
       "pi2": null,
-      "po·1": null,
+      "po1": null,
       "pi3": null,
-      "po·2": null
+      "po2": null
     }
   },
   "planter_1": {
@@ -1657,8 +1619,8 @@
     ],
     "id": "concealed_pipe_out_muti_1",
     "port_recipe_icon": {
-      "po·1": null,
-      "po·2": null
+      "po1": null,
+      "po2": null
     }
   },
   "protocol_core_1": {
@@ -1791,6 +1753,10 @@
     "gridWidth": 3,
     "gridHeight": 3,
     "anchor": [
+      {
+        "x": 0.5,
+        "y": 0.5
+      },
       {
         "x": 0.5,
         "y": 0.5
