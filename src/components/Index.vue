@@ -49,6 +49,7 @@ import {
 } from "../core_storage/BeltStorage.js";
 import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
 import { initLoader } from "../core_loader/index.js";
+import { resetPosition, resetScale } from "../core_stage/ScaleStage.js";
 const storageStore = useStorageStore();
 const machineStore = useMachineStore();
 const canvas = ref(null);
@@ -126,10 +127,13 @@ function cancelPlaceNode() {
   drawGridLines();
   drawHitArea();
   initIndicator();
+  resetPosition();
+  resetScale();
   await app.init({
     width: storageStore.width,
     height: storageStore.height,
     backgroundColor: storageStore.backgroundColor,
+    backgroundAlpha: storageStore.backgroundAlpha,
     resolution: Math.min(window.devicePixelRatio || 1, 2),
     autoDensity: true,
   });

@@ -42,11 +42,9 @@ function drawGridLines() {
   const grid = new Graphics({ roundPixels: true });
   if (!storageStore) storageStore = useStorageStore();
   const row = storageStore.rowCount;
-  const col = storageStore.colCount;
-  const width = storageStore.width;
-  const height = storageStore.height;
-  const gridWidth = width / col;
-  const gridHeight = height / row;
+  const col = storageStore.colCount;;
+  const gridWidth = storageStore.cellWidth;
+  const gridHeight = storageStore.cellHeight;
 
   // 图纸风格：线段在交点附近断开，交点画小方块
   // 交点留白与方块尺寸均随格子尺寸缩放
@@ -81,7 +79,7 @@ function drawGridLines() {
 
   grid.stroke({
     pixelLine: true,
-    color: 0x123123,
+    color: storageStore.gridLineColor,
   });
 
   // 交点小方块
@@ -95,15 +93,15 @@ function drawGridLines() {
       );
     }
   }
-  grid.fill({ color: 0x123123 });
+  grid.fill({ color: storageStore.gridLineColor });
 
   backgroundContainer.addChild(grid);
 }
 
 function drawHitArea() {
   if (!storageStore) storageStore = useStorageStore();
-  const width = storageStore.width;
-  const height = storageStore.height;
+  const width = Math.min(storageStore.width, storageStore.height);
+  const height = Math.min(storageStore.width, storageStore.height);
   const hitArea = new Graphics({
     eventMode: "static",
   })

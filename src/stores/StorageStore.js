@@ -3,19 +3,21 @@ import { ref, computed, markRaw } from "vue";
 
 export const useStorageStore = defineStore("StorageStore", () => {
   // 场景配置
-  const width = ref(800);
+  const width = ref(1600);
   const height = ref(800);
-  const backgroundColor = ref(0xffffff);
+  const gridLineColor = ref("black");
+  const backgroundColor = ref("#89CFF0");
+  const backgroundAlpha = ref(0.5);
   const rowCount = ref(50);
   const colCount = ref(50);
-  const cellWidth = computed(() => width.value / colCount.value);
-  const cellHeight = computed(() => height.value / rowCount.value);
+  const cellWidth = computed(() => Math.min(width.value, height.value) / colCount.value);
+  const cellHeight = computed(() => Math.min(width.value, height.value) / rowCount.value);
   // 缩放比例以及偏移量
   const scale = ref(1);
   const min_scale = ref(0.8);
   const max_scale = ref(4);
   const offset_position = ref({ x: 0, y: 0 });
-  const max_offset = ref(160);
+  const max_offset = ref(500);
   // 视图移动步长 = 单个格子的世界像素，随画布尺寸/行列数自动推导
   const base_step = Math.min(cellWidth.value, cellHeight.value) * 2;
   const default_pipe_port_offset = 0.125
@@ -77,6 +79,8 @@ export const useStorageStore = defineStore("StorageStore", () => {
     max_offset,
     base_step,
     backgroundColor,
+    backgroundAlpha,
+    gridLineColor,
     rowCount,
     colCount,
     machines,
