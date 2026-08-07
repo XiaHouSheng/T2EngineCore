@@ -3,6 +3,7 @@ import { getPipeByPosition } from "../core_storage/PipeStorage.js";
 import { getBeltByPosition } from "../core_storage/BeltStorage.js";
 import { useBeltStore } from "../stores/BeltStore.js";
 import { usePipeStore } from "../stores/PipeStore.js";
+import { useStorageStore } from "../stores/StorageStore.js";
 import { parseMaskCell } from "./MaskUtil.js";
 
 function proxyForHandle(func, name, time_ = 300) {
@@ -149,10 +150,28 @@ function makeClickDetector(delayMs = 300) {
   return { start, cancel, isPending };
 }
 
+/**
+ * 页面/屏幕坐标 -> 视口世界坐标
+ * 与 SimInit.proxyProcessPositionWithScale 一致
+ * @param {object} event 指针事件，需包含 event.screen.x / event.screen.y
+ * @returns {{ x: number, y: number }} 视口世界坐标
+ */
+function toWorld(event) {
+  const storageStore = useStorageStore();
+  const { scale } = storageStore;
+  const { x: offsetX, y: offsetY } = storageStore.offset_position;
+  const makeUpOffset = Math.min(storageStore.width, storageStore.height) / 2;
+  return {
+    x: (event.screen.x - offsetX) / scale + makeUpOffset,
+    y: (event.screen.y - offsetY) / scale + makeUpOffset,
+  };
+}
+
 export {
   proxyForHandle,
   scanAdjacentPort,
   directionConstraint,
   makeDebouncedDelay,
   makeClickDetector,
+  toWorld,
 };

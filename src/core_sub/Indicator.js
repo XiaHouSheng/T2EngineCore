@@ -40,6 +40,7 @@ import {
   directionConstraint,
   makeDebouncedDelay,
   makeClickDetector,
+  toWorld,
 } from "../core_middleware/IndicatorUtil.js";
 import { parseMaskCell } from "../core_middleware/MaskUtil.js";
 import {
@@ -568,16 +569,6 @@ function onStartSelect(name) {
 
   const storageStore = useStorageStore();
 
-  // 页面/屏幕坐标 -> 视口世界坐标（与 SimInit.proxyProcessPositionWithScale 一致）
-  const toWorld = (event) => {
-    const { x: offsetX, y: offsetY } = storageStore.offset_position;
-    const { scale } = storageStore;
-    return {
-      x: (event.screen.x - offsetX) / scale,
-      y: (event.screen.y - offsetY) / scale,
-    };
-  };
-
   const onmousedown = (event) => {
     const { x, y } = toWorld(event);
     S.base_pixel_x = x;
@@ -668,16 +659,6 @@ function onStartSelectMove(name, is_copy = false) {
   const storageStore = useStorageStore();
   const cellWidth = storageStore.cellWidth;
   const cellHeight = storageStore.cellHeight;
-
-  // 页面/屏幕坐标 -> 视口世界坐标（与 SimInit.proxyProcessPositionWithScale 一致）
-  const toWorld = (event) => {
-    const { x: offsetX, y: offsetY } = storageStore.offset_position;
-    const { scale } = storageStore;
-    return {
-      x: (event.screen.x - offsetX) / scale,
-      y: (event.screen.y - offsetY) / scale,
-    };
-  };
 
   // 计算选中实体的中心 pixel 作为基准
   setSelectBaseCenterPixel(S.metaBackup, storageStore);

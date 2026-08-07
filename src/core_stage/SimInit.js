@@ -27,8 +27,9 @@ function proxyProcessPositionWithScale(event) {
   const scale = storageStore.scale;
   // event.screen 为 canvas 内部坐标，Pixi 已用 getBoundingClientRect 补偿
   // canvas 在页面中的位置、CSS 缩放与 devicePixelRatio，无需再手动补偿
-  const screenX = (event.screen.x - offsetX) / scale;
-  const screenY = (event.screen.y - offsetY) / scale;
+  const makeUpOffset = Math.min(storageStore.width, storageStore.height) / 2;
+  const screenX = (event.screen.x - offsetX) / scale + makeUpOffset;
+  const screenY = (event.screen.y - offsetY) / scale + makeUpOffset;
   const grid_position = pixelToGridNoneOffset(screenX, screenY);
   const result = {
     ...event,
