@@ -30,7 +30,10 @@ import {
 } from "../core_sub/Pipe.js";
 
 import { initIndicator } from "../core_sub/Indicator.js";
-import { dispatchPlaceMachineHandle, dispatchPlaceNodeHandle } from "../core_middleware/KeyboardHandle.js";
+import {
+  dispatchPlaceMachineHandle,
+  dispatchPlaceNodeHandle,
+} from "../core_middleware/KeyboardHandle.js";
 import { S } from "../core_middleware/IndicatorState.js";
 import { setMachineClickHandler } from "../core_middleware/EventHandle.js";
 import {
@@ -42,7 +45,11 @@ import {
   drawMaskFromPosition,
   drawSpecialMask,
 } from "../core_stage/IndicatorStage.js";
-import { handleKeyboard, handleKeyboardUp,  handleKeyboardForZoom } from "../core_middleware/KeyboardHandle.js";
+import {
+  handleKeyboard,
+  handleKeyboardUp,
+  handleKeyboardForZoom,
+} from "../core_middleware/KeyboardHandle.js";
 import {
   findBeltNearBy,
   getBeltByPosition,
@@ -50,6 +57,17 @@ import {
 import { getMachineMaskTypeByPosition } from "../core_storage/MachineStorage.js";
 import { initLoader } from "../core_loader/index.js";
 import { resetPosition, resetScale } from "../core_stage/ScaleStage.js";
+import {
+  initStoreBlueprint,
+  saveBlueprintLocal,
+  clearBlueprintLocal,
+  deleteBlueprintLocal,
+  selectBlueprintLocal,
+  addBlueprintLocal,
+  loadBlueprintFromFile,
+  exportBlueprintToFile,
+} from "../core_blueprint/Blueprint.js";
+
 const storageStore = useStorageStore();
 const machineStore = useMachineStore();
 const canvas = ref(null);
@@ -69,7 +87,8 @@ const selectedRecipeId = ref(null);
 const resourcesStore = useResourcesStore();
 function openRecipeSelector(machine) {
   recipeSelectorMachine.value = machine;
-  selectedRecipeId.value = machine.now_recipe || (machine.recipe_id?.[0] ?? null);
+  selectedRecipeId.value =
+    machine.now_recipe || (machine.recipe_id?.[0] ?? null);
   recipeSelectorOptions.value = (machine.recipe_id || [])
     .map((id) => resourcesStore.recipes[id])
     .filter(Boolean);
@@ -115,11 +134,43 @@ function onPlaceNodeClick() {
 function confirmPlaceNode() {
   if (!selectedNodeType.value) return;
   showNodeSelector.value = false;
-  dispatchPlaceNodeHandle(selectedNodeType.value, selectedNodeKind.value === 'belt');
+  dispatchPlaceNodeHandle(
+    selectedNodeType.value,
+    selectedNodeKind.value === "belt",
+  );
 }
 function cancelPlaceNode() {
   showNodeSelector.value = false;
   selectedNodeType.value = null;
+}
+
+// 蓝图测试
+const blueprintList = computed(() =>
+  Object.entries(storageStore.blueprints).map(([id, bp]) => ({
+    id,
+    name: bp.name,
+  })),
+);
+const currentBlueprintId = computed({
+  get: () => storageStore.current_blueprint,
+  set: (val) => {
+    if (val && val !== storageStore.current_blueprint)
+      selectBlueprintLocal(val);
+  },
+});
+function onAddBlueprint() {
+  const name = window.prompt("蓝图名称", "New Blueprint");
+  if (name === null) return;
+  addBlueprintLocal(name);
+}
+function onSaveBlueprint() {
+  saveBlueprintLocal();
+}
+function onClearBlueprint() {
+  clearBlueprintLocal();
+}
+function onDeleteBlueprint() {
+  deleteBlueprintLocal(storageStore.current_blueprint);
 }
 
 (async () => {
@@ -138,6 +189,7 @@ function cancelPlaceNode() {
     autoDensity: true,
   });
   canvas.value.appendChild(app.canvas);
+  initStoreBlueprint();
 })();
 
 onMounted(() => {
@@ -165,8 +217,27 @@ onUnmounted(() => {
     <button>Delete Machine</button>
   </div>
 
+  <!-- 蓝图测试 -->
+  <div class="blueprint-test-bar">
+    <select v-model="currentBlueprintId">
+      <option v-for="bp in blueprintList" :key="bp.id" :value="bp.id">
+        {{ bp.name }}
+      </option>
+    </select>
+    <button @click="onAddBlueprint">Add Blueprint</button>
+    <button @click="onSaveBlueprint">Save Blueprint</button>
+    <button @click="onClearBlueprint">Clear Blueprint</button>
+    <button @click="onDeleteBlueprint">Delete Blueprint</button>
+    <button @click="exportBlueprintToFile">Export Blueprint</button>
+    <button @click="loadBlueprintFromFile">Import Blueprint</button>
+  </div>
+
   <!-- 机器类型选择弹框 -->
-  <div v-if="showMachineSelector" class="machine-selector-overlay" @click.self="cancelPlaceMachine">
+  <div
+    v-if="showMachineSelector"
+    class="machine-selector-overlay"
+    @click.self="cancelPlaceMachine"
+  >
     <div class="machine-selector-dialog">
       <h3>选择机器类型</h3>
       <div class="machine-list">
@@ -178,26 +249,49 @@ onUnmounted(() => {
           @click="selectedMachineType = type"
         >
           <span class="machine-key">{{ type }}</span>
-          <span class="machine-name">{{ machineStore.machineTypes[type]?.name || '' }}</span>
-          <span class="machine-size">{{ machineStore.machineTypes[type]?.gridWidth }}x{{ machineStore.machineTypes[type]?.gridHeight }}</span>
+          <span class="machine-name">{{
+            machineStore.machineTypes[type]?.name || ""
+          }}</span>
+          <span class="machine-size"
+            >{{ machineStore.machineTypes[type]?.gridWidth }}x{{
+              machineStore.machineTypes[type]?.gridHeight
+            }}</span
+          >
         </div>
       </div>
       <div class="selector-actions">
         <button class="btn-cancel" @click="cancelPlaceMachine">取消</button>
-        <button class="btn-confirm" :disabled="!selectedMachineType" @click="confirmPlaceMachine">确认放置</button>
+        <button
+          class="btn-confirm"
+          :disabled="!selectedMachineType"
+          @click="confirmPlaceMachine"
+        >
+          确认放置
+        </button>
       </div>
     </div>
   </div>
 
   <!-- 节点类型选择弹框 -->
-  <div v-if="showNodeSelector" class="machine-selector-overlay" @click.self="cancelPlaceNode">
+  <div
+    v-if="showNodeSelector"
+    class="machine-selector-overlay"
+    @click.self="cancelPlaceNode"
+  >
     ...
   </div>
 
   <!-- 配方选择弹框 -->
-  <div v-if="showRecipeSelector" class="machine-selector-overlay" @click.self="cancelRecipe">
+  <div
+    v-if="showRecipeSelector"
+    class="machine-selector-overlay"
+    @click.self="cancelRecipe"
+  >
     <div class="machine-selector-dialog">
-      <h3>选择配方 — {{ recipeSelectorMachine?.name || recipeSelectorMachine?.id }}</h3>
+      <h3>
+        选择配方 —
+        {{ recipeSelectorMachine?.name || recipeSelectorMachine?.id }}
+      </h3>
       <div class="machine-list">
         <div
           v-for="recipe in recipeSelectorOptions"
@@ -208,11 +302,19 @@ onUnmounted(() => {
         >
           <span class="machine-key">{{ recipe.name || recipe.id }}</span>
           <span class="machine-name">
-            <span v-for="(cnt, item) in recipe.in" :key="'in-'+item" class="recipe-item">
+            <span
+              v-for="(cnt, item) in recipe.in"
+              :key="'in-' + item"
+              class="recipe-item"
+            >
               {{ item }}×{{ cnt }}
             </span>
             <span class="recipe-arrow">→</span>
-            <span v-for="(cnt, item) in recipe.out" :key="'out-'+item" class="recipe-item">
+            <span
+              v-for="(cnt, item) in recipe.out"
+              :key="'out-' + item"
+              class="recipe-item"
+            >
               {{ item }}×{{ cnt }}
             </span>
           </span>
@@ -224,13 +326,23 @@ onUnmounted(() => {
       </div>
       <div class="selector-actions">
         <button class="btn-cancel" @click="cancelRecipe">取消</button>
-        <button class="btn-confirm" :disabled="!selectedRecipeId" @click="confirmRecipe">确认</button>
+        <button
+          class="btn-confirm"
+          :disabled="!selectedRecipeId"
+          @click="confirmRecipe"
+        >
+          确认
+        </button>
       </div>
     </div>
   </div>
 
   <!-- 节点类型选择弹框 -->
-  <div v-if="showNodeSelector" class="machine-selector-overlay" @click.self="cancelPlaceNode">
+  <div
+    v-if="showNodeSelector"
+    class="machine-selector-overlay"
+    @click.self="cancelPlaceNode"
+  >
     <div class="machine-selector-dialog">
       <h3>选择节点类型</h3>
       <div class="selector-section">
@@ -240,12 +352,16 @@ onUnmounted(() => {
             class="toggle-btn"
             :class="{ active: selectedNodeKind === 'belt' }"
             @click="selectedNodeKind = 'belt'"
-          >传送带</button>
+          >
+            传送带
+          </button>
           <button
             class="toggle-btn"
             :class="{ active: selectedNodeKind === 'pipe' }"
             @click="selectedNodeKind = 'pipe'"
-          >管道</button>
+          >
+            管道
+          </button>
         </div>
       </div>
       <div class="selector-section">
@@ -264,7 +380,13 @@ onUnmounted(() => {
       </div>
       <div class="selector-actions">
         <button class="btn-cancel" @click="cancelPlaceNode">取消</button>
-        <button class="btn-confirm" :disabled="!selectedNodeType" @click="confirmPlaceNode">确认放置</button>
+        <button
+          class="btn-confirm"
+          :disabled="!selectedNodeType"
+          @click="confirmPlaceNode"
+        >
+          确认放置
+        </button>
       </div>
     </div>
   </div>
@@ -408,5 +530,34 @@ onUnmounted(() => {
   text-align: center;
   color: #666;
   padding: 20px 0;
+}
+
+/* 蓝图测试栏 */
+.blueprint-test-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.blueprint-test-bar select {
+  padding: 4px 8px;
+  border: 1px solid #445;
+  border-radius: 4px;
+  background: #2a2a3e;
+  color: #ccc;
+  font-size: 13px;
+  min-width: 160px;
+}
+.blueprint-test-bar button {
+  padding: 4px 12px;
+  border: 1px solid #445;
+  border-radius: 4px;
+  background: #2a2a3e;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 13px;
+}
+.blueprint-test-bar button:hover {
+  background: #3a3a5a;
 }
 </style>

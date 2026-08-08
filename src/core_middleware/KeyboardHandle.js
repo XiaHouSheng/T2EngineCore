@@ -7,8 +7,27 @@ import {
   onStartPlaceMachine,
   onStartPlaceNode,
 } from "../core_sub/Indicator.js";
+import { saveBlueprintLocal } from "../core_blueprint/Blueprint.js";
 
 let commandStore = null;
+
+/**
+ * 判断事件目标是否为可编辑元素（输入框/文本域/下拉框/富文本）
+ * 用户在这些控件内输入时不应触发引擎命令
+ * @param {KeyboardEvent} event
+ * @returns {boolean}
+ */
+function isTypingTarget(event) {
+  const target = event.target;
+  if (!target || typeof target.tagName !== "string") return false;
+  const tag = target.tagName.toUpperCase();
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable === true
+  );
+}
 
 function dispatchPlaceMachineHandle(typeName) {
   if (!commandStore) commandStore = useCommandStore();
@@ -23,10 +42,11 @@ function dispatchPlaceNodeHandle(typeName, is_belt = true) {
 }
 
 function handleKeyboardForZoom(event) {
+  if (isTypingTarget(event)) return;
   if (!commandStore) commandStore = useCommandStore();
   const key = event.key.toLowerCase();
   const func = commandStore.zomm_command_handle[key];
-  if (func) func();
+  if (func && !event.ctrlKey) func();
 }
 
 function handleKeyboardUp(keyboardEvent) {
@@ -35,6 +55,7 @@ function handleKeyboardUp(keyboardEvent) {
 }
 
 function handleKeyboard(keyboardEvent) {
+  if (isTypingTarget(keyboardEvent)) return;
   if (!commandStore) commandStore = useCommandStore();
   commandStore.is_ctrl = keyboardEvent.ctrlKey;
   const key = keyboardEvent.key.toLowerCase();
@@ -46,6 +67,11 @@ function handleKeyboard(keyboardEvent) {
   if (keyboardEvent.ctrlKey && key === "c") {
     command = commandStore.keyboard_command["copy"];
     sub_command = commandStore.keyboard_sub_command["copy"];
+  }
+
+  if (keyboardEvent.ctrlKey && key === "s") {
+    keyboardEvent.preventDefault();
+    saveBlueprintLocal();
   }
 
   // 上一条命令 | 用于子命令的存储

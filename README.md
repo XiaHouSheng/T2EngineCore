@@ -4,7 +4,7 @@
 
 **A grid-based factory logistics simulation engine built with Vue 3 + Pixi.js**
 
-Supports machine, conveyor belt, and pipe entity editing with real-time collision detection, port connection, box selection, viewport navigation, and visual interaction.
+Supports machine, belt belt, and pipe entity editing with real-time collision detection, port connection, box selection, viewport navigation, and visual interaction.
 
 English | [简体中文](./README.zh-CN.md)
 
@@ -97,6 +97,35 @@ The `core_loader` module handles loading external configuration data:
 - **Blacklist filtering**: machines listed in a configurable blacklist (e.g. `gas_pump_1`) are excluded from injection
 - Arrow textures (`arrow_up/down/left/right`) loaded as part of the standard texture system for port direction indicators
 
+## Plugin Layer
+
+`src/plugin/` provides a Vue plugin wrapper for the engine, supporting two integration styles:
+
+- **Vue plugin**: `app.use(SimEngine, options)` registers a global `<SimCanvas>` component, auto-creates the engine singleton, and installs a dedicated Pinia instance
+- **Functional**: `createSimEngine(options)` returns the engine singleton directly for manual canvas mounting
+
+| Module | Responsibility |
+|--------|----------------|
+| `engine.js` | Engine singleton lifecycle (create/get/destroy), Pixi init, global keyboard event registration |
+| `api.js` | Public API aggregation (re-exports stores, MachineUtil, Belt/Pipe/Machine operations, etc.) |
+| `index.js` | Vue Plugin entry; registers `<SimCanvas>` component |
+| `SimCanvas.vue` | Canvas mount component; Props: `options` / `destroyOnUnmount`, Emits: `ready` / `error` |
+
+```js
+// Vue plugin
+import { createApp } from "vue";
+import SimEngine from "sim-engine";
+const app = createApp(App);
+app.use(SimEngine, { width: 1600, height: 800 });
+```
+
+```js
+// Functional
+import { createSimEngine } from "sim-engine";
+const engine = await createSimEngine({ width: 1600, height: 800 });
+document.getElementById("root").appendChild(engine.canvas);
+```
+
 ---
 
 # Architecture
@@ -104,6 +133,7 @@ The `core_loader` module handles loading external configuration data:
 ```
 Application
 │
+├── Plugin          Vue plugin wrapper (SimCanvas / public API)
 ├── Stores          Pinia state management
 ├── Storage         Grid mapping / entity storage
 ├── Sub             Business logic orchestration
@@ -150,6 +180,7 @@ All rendering is managed via Pixi.js Containers, re-parented under the viewport 
 ```
 src/
 ├── components/            Vue pages
+├── plugin/                Engine plugin wrapper (SimCanvas / public API / Vue Plugin)
 ├── stores/                Pinia state management
 ├── core_stage/            Pixi rendering layer
 ├── core_container_sub/    Pixi Container wrappers

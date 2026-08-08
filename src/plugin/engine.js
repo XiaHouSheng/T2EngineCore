@@ -20,6 +20,7 @@ import {
   handleKeyboardForZoom,
 } from "../core_middleware/KeyboardHandle.js";
 import { useStorageStore } from "../stores/StorageStore.js";
+import { initStoreBlueprint } from "../core_blueprint/Blueprint.js";
 
 /** @type {{ app, canvas, pinia, mount, destroy } | null} */
 let _engine = null;
@@ -47,6 +48,8 @@ export async function ensureEngine(options = {}) {
   drawGridLines();
   drawHitArea();
   initIndicator();
+  resetPosition();
+  resetScale();
 
   const storageStore = useStorageStore();
   await app.init({
@@ -57,7 +60,10 @@ export async function ensureEngine(options = {}) {
     antialias: options.antialias ?? true,
   });
 
-  // 3. 加载配置与资源
+  // 4. 初始化蓝图存储
+  initStoreBlueprint();
+
+  // 5. 加载配置与资源
   await initLoader();
 
   _engine = {

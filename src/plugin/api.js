@@ -118,3 +118,22 @@ export {
   pixelToGridNoneOffset,
 } from "../core_middleware/PositionConvert.js";
 
+// 蓝图操作（本地 CRUD / 文件导入导出 / 渲染）
+export {
+  initStoreBlueprint,
+  createBlueprint,
+  saveBlueprintLocal,
+  clearBlueprintLocal,
+  deleteBlueprintLocal,
+  selectBlueprintLocal,
+  addBlueprintLocal,
+  loadBlueprintFromFile,
+  exportBlueprintToFile,
+  importBlueprintFromData,
+  setBlueprintCallbacks,
+} from "../core_blueprint/Blueprint.js";
+export {
+  renderBlueprint,
+  clearBlueprint,
+} from "../core_blueprint/BlueprintStage.js";
+

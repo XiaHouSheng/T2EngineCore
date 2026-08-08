@@ -253,7 +253,7 @@ function onStartPlace() {
 
     resetTempVariables();
     setBaseGrid(event.gridX, event.gridY);
-    console.log(useStorageStore().conveyorLocations);
+    console.log(useStorageStore().beltLocations);
     console.log(useStorageStore().pipeLocations);
     console.log(useStorageStore().machineLocations);
   }
@@ -620,8 +620,8 @@ function onStartSelect(name) {
       S.metaRotateMove.machines[id] = { ...storageStore.machines[id] };
     });
     Object.keys(S.selectGraphics.belts).forEach((id) => {
-      S.metaBackup.belts[id] = { ...storageStore.conveyors[id] };
-      S.metaRotateMove.belts[id] = { ...storageStore.conveyors[id] };
+      S.metaBackup.belts[id] = { ...storageStore.belts[id] };
+      S.metaRotateMove.belts[id] = { ...storageStore.belts[id] };
     });
     Object.keys(S.selectGraphics.pipes).forEach((id) => {
       S.metaBackup.pipes[id] = { ...storageStore.pipes[id] };

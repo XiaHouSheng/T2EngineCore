@@ -97,6 +97,35 @@ SimulationEngine 是一个面向工厂物流类游戏的二维网格仿真引擎
 - **黑名单过滤**：位于黑名单（如 `gas_pump_1`）中的机器会被排除注入
 - 箭头贴图（`arrow_up/down/left/right`）随标准纹理系统加载，用于端口方向指示
 
+## 插件封装
+
+`src/plugin/` 提供引擎的 Vue 插件封装，支持两种集成方式：
+
+- **Vue 插件式**：`app.use(SimEngine, options)` 注册全局 `<SimCanvas>` 组件，自动创建引擎单例并安装专用 Pinia 实例
+- **函数式**：`createSimEngine(options)` 直接获取引擎单例，手动挂载 canvas
+
+| 模块 | 职责 |
+|------|------|
+| `engine.js` | 引擎单例管理（创建/获取/销毁），含 Pixi 初始化与全局键盘事件注册 |
+| `api.js` | 对外 API 聚合（re-export stores、MachineUtil、Belt/Pipe/Machine 操作等） |
+| `index.js` | Vue Plugin 入口，注册 `<SimCanvas>` 组件 |
+| `SimCanvas.vue` | 引擎画布挂载组件，Props: `options` / `destroyOnUnmount`，Emits: `ready` / `error` |
+
+```js
+// Vue 插件式
+import { createApp } from "vue";
+import SimEngine from "sim-engine";
+const app = createApp(App);
+app.use(SimEngine, { width: 1600, height: 800 });
+```
+
+```js
+// 函数式
+import { createSimEngine } from "sim-engine";
+const engine = await createSimEngine({ width: 1600, height: 800 });
+document.getElementById("root").appendChild(engine.canvas);
+```
+
 ---
 
 # 架构
@@ -104,6 +133,7 @@ SimulationEngine 是一个面向工厂物流类游戏的二维网格仿真引擎
 ```
 Application
 │
+├── Plugin          Vue 插件封装（SimCanvas / 对外 API）
 ├── Stores          Pinia 状态管理
 ├── Storage         网格映射 / 实体存储
 ├── Sub             业务逻辑编排（指示器、实体操作）
@@ -150,6 +180,7 @@ Viewport（可滚动/缩放的 Pixi Container）
 ```
 src/
 ├── components/            Vue 页面
+├── plugin/                引擎插件封装（SimCanvas / 对外 API / Vue Plugin）
 ├── stores/                Pinia 状态管理
 ├── core_stage/            Pixi 渲染层
 ├── core_container_sub/    Pixi Container 封装
