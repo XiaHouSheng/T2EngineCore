@@ -21,6 +21,7 @@ import {
 } from "../core_middleware/KeyboardHandle.js";
 import { useStorageStore } from "../stores/StorageStore.js";
 import { initStoreBlueprint } from "../core_blueprint/Blueprint.js";
+import { resetPosition, resetScale } from "../core_stage/ScaleStage.js";
 
 /** @type {{ app, canvas, pinia, mount, destroy } | null} */
 let _engine = null;
